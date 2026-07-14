@@ -1,18 +1,27 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface OnboardBusinessFormProps {
   email: string;
 }
 
 export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps) {
+  const { update } = useSession();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [host, setHost] = useState("queueless.com");
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHost(window.location.host);
+    }
+  }, []);
 
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -55,6 +64,8 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
         throw new Error(data.error || "Failed to create business");
       }
 
+      // Update NextAuth session to retrieve role/businessId from DB
+      await update();
       // Force NextAuth session refresh by triggering a hard reload or simple router refresh
       router.refresh();
       // Redirect to dashboard
@@ -99,7 +110,7 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-zinc-300">Business URL Slug</label>
         <div className="flex items-center gap-1 bg-black border border-zinc-800 rounded-lg px-3 py-2 focus-within:border-zinc-500 transition-colors">
-          <span className="text-sm text-zinc-600 select-none">queueless.com/q/</span>
+          <span className="text-sm text-zinc-600 select-none">{host}/q/</span>
           <input
             type="text"
             required
