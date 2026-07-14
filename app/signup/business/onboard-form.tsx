@@ -19,7 +19,10 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setHost(window.location.host);
+      const handle = setTimeout(() => {
+        setHost(window.location.host);
+      }, 0);
+      return () => clearTimeout(handle);
     }
   }, []);
 
