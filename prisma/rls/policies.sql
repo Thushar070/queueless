@@ -11,7 +11,7 @@ CREATE POLICY staff_tenant_policy ON "Staff"
   TO authenticated
   USING (
     (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') OR
-    (businessId = auth.jwt() -> 'user_metadata' ->> 'businessId')
+    ("businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId')
   );
 
 -- =====================================================================
@@ -25,14 +25,14 @@ CREATE POLICY queue_tenant_policy ON "Queue"
   TO authenticated
   USING (
     (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') OR
-    (businessId = auth.jwt() -> 'user_metadata' ->> 'businessId')
+    ("businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId')
   );
 
 DROP POLICY IF EXISTS queue_public_read_policy ON "Queue";
 CREATE POLICY queue_public_read_policy ON "Queue"
   FOR SELECT
   TO anon, authenticated
-  USING (deletedAt IS NULL);
+  USING ("deletedAt" IS NULL);
 
 -- =====================================================================
 -- 3. QUEUEENTRY TABLE POLICIES
@@ -45,7 +45,7 @@ CREATE POLICY queue_entry_tenant_policy ON "QueueEntry"
   TO authenticated
   USING (
     (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') OR
-    (businessId = auth.jwt() -> 'user_metadata' ->> 'businessId')
+    ("businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId')
   );
 
 DROP POLICY IF EXISTS queue_entry_public_policy ON "QueueEntry";
@@ -69,7 +69,7 @@ CREATE POLICY notification_tenant_policy ON "Notification"
     EXISTS (
       SELECT 1 FROM "QueueEntry" qe
       WHERE qe.id = "queueEntryId"
-      AND qe.businessId = auth.jwt() -> 'user_metadata' ->> 'businessId'
+      AND qe."businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId'
     )
   );
 
@@ -84,5 +84,5 @@ CREATE POLICY audit_log_tenant_policy ON "AuditLog"
   TO authenticated
   USING (
     (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') OR
-    (businessId = auth.jwt() -> 'user_metadata' ->> 'businessId')
+    ("businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId')
   );
