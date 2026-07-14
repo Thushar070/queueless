@@ -7,5 +7,141 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  BUSINESS_OWNER
+  STAFF
+}
+
+enum QueueEntryStatus {
+  WAITING
+  CALLED
+  SERVING
+  COMPLETED
+  SKIPPED
+  CANCELLED
+}
+
+enum QueueStatus {
+  OPEN
+  CLOSED
+}
+
+enum BusinessStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model Business {
+  id                String         @id @default(cuid())
+  name              String
+  slug              String         @unique
+  email             String         @unique
+  phone             String?
+  status            BusinessStatus @default(ACTIVE)
+  subscription      String?        // e.g. "FREE" | "PRO" — informational only, no billing enforced
+  workingHoursStart String?        // "09:00", nullable = no restriction
+  workingHoursEnd   String?        // "18:00"
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?      // soft delete
+
+  staff             Staff[]
+  queues            Queue[]
+  auditLogs         AuditLog[]
+}
+
+model SuperAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Staff {
+  id           String    @id @default(cuid())
+  businessId   String
+  business     Business  @relation(fields: [businessId], references: [id])
+  name         String
+  email        String    @unique
+  passwordHash String?   // null if Google-only account
+  role         UserRole  @default(STAFF) // BUSINESS_OWNER or STAFF only (SUPER_ADMIN model is separate)
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  @@index([businessId])
+}
+
+model Queue {
+  id                String       @id @default(cuid())
+  businessId        String
+  business          Business     @relation(fields: [businessId], references: [id])
+  name              String
+  slug              String       // unique within a business, not globally
+  status            QueueStatus  @default(OPEN)
+  avgServiceTimeMin Int          @default(8)
+  maxCapacity       Int?         // null = unlimited
+  workingHoursStart String?
+  workingHoursEnd   String?
+  qrCodeUrl         String?      // stored generated QR image URL (Supabase storage)
+  createdAt         DateTime     @default(now())
+  deletedAt         DateTime?
+
+  entries           QueueEntry[]
+
+  @@unique([businessId, slug])
+  @@index([businessId])
+}
+
+model QueueEntry {
+  id            String           @id @default(cuid())
+  queueId       String
+  queue         Queue            @relation(fields: [queueId], references: [id])
+  businessId    String           // denormalized for RLS + query simplicity
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  position      Int              // stored, recalculated — see §7
+  status        QueueEntryStatus @default(WAITING)
+  trackingToken String           @unique // opaque, unguessable
+  joinedAt      DateTime         @default(now())
+  calledAt      DateTime?
+  servingAt     DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+
+  @@index([queueId, status])
+  @@index([businessId])
+  @@index([trackingToken])
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  queueEntryId String
+  type         String   // "JOINED" | "THREE_AWAY" | "YOUR_TURN" | "QUEUE_CANCELLED"
+  channel      String   // "SMS" (email reserved for future)
+  status       String   // "SENT" | "FAILED" | "MOCKED"
+  providerRef  String?  // Twilio SID
+  createdAt    DateTime @default(now())
+
+  @@index([queueEntryId])
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  businessId String?   // null for platform-level (Super Admin) actions
+  business   Business? @relation(fields: [businessId], references: [id])
+  actorId    String?   // Staff.id or SuperAdmin identifier
+  actorRole  UserRole?
+  action     String    // e.g. "QUEUE_ENTRY_CALLED", "BUSINESS_SUSPENDED"
+  targetType String    // e.g. "QueueEntry", "Business"
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([businessId])
+  @@index([targetType, targetId])
 }
