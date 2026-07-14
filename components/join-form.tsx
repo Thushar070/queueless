@@ -53,7 +53,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left">
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-lg text-left">
           {error}
@@ -61,7 +61,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
       )}
 
       <div>
-        <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="customerName">
+        <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="customerName">
           Your Name
         </label>
         <input
@@ -69,7 +69,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
           type="text"
           placeholder="Jane Doe"
           {...register("customerName")}
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+          className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
         />
         {errors.customerName && (
           <p className="text-red-400 text-xs mt-1 text-left">{errors.customerName.message}</p>
@@ -77,7 +77,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="customerPhone">
+        <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="customerPhone">
           Phone Number (for SMS waitlist alerts)
         </label>
         <input
@@ -85,7 +85,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
           type="tel"
           placeholder="+15555555555"
           {...register("customerPhone")}
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+          className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
         />
         {errors.customerPhone && (
           <p className="text-red-400 text-xs mt-1 text-left">{errors.customerPhone.message}</p>
@@ -93,7 +93,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="customerEmail">
+        <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="customerEmail">
           Email Address (Optional)
         </label>
         <input
@@ -101,7 +101,7 @@ export default function JoinForm({ queueId }: JoinFormProps) {
           type="email"
           placeholder="jane@example.com"
           {...register("customerEmail")}
-          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+          className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
         />
         {errors.customerEmail && (
           <p className="text-red-400 text-xs mt-1 text-left">{errors.customerEmail.message}</p>
@@ -111,11 +111,11 @@ export default function JoinForm({ queueId }: JoinFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-indigo-800 disabled:to-purple-800 text-white font-bold py-2.5 rounded-lg transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+        className="w-full bg-white hover:bg-zinc-200 disabled:bg-zinc-900 disabled:text-zinc-550 text-black font-bold py-2.5 rounded-lg transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
       >
         {isSubmitting ? (
           <>
-            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-slate-100" />
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-black" />
             Joining Line...
           </>
         ) : (

@@ -114,21 +114,21 @@ export default function StaffQueueDashboard({
   return (
     <div className="space-y-6">
       {/* Dashboard Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-zinc-950 border border-zinc-900 p-6 rounded-2xl">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100">{queueName}</h1>
-          <p className="text-sm text-slate-400 mt-1">Live staff operations control board</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">{queueName}</h1>
+          <p className="text-sm text-zinc-400 mt-1">Live staff operations control board</p>
         </div>
 
         <div>
           <button
             onClick={() => handleAction(`/api/queues/${queueId}/call-next`, null, "call-next")}
             disabled={isMutating !== null || waitingEntries.length === 0}
-            className="w-full md:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-indigo-800 disabled:to-purple-800 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm"
+            className="w-full md:w-auto bg-white hover:bg-zinc-200 disabled:bg-zinc-900 disabled:text-zinc-550 text-black font-bold px-6 py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
             {isMutating === "call-next" ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-slate-100" />
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-black" />
                 Calling...
               </>
             ) : (
@@ -148,10 +148,10 @@ export default function StaffQueueDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* COLUMN 1: CURRENTLY SERVING */}
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 flex flex-col h-[500px]">
+        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 flex flex-col h-[500px]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+            <h2 className="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-550 animate-pulse" />
               Serving ({servingEntries.length})
             </h2>
           </div>
@@ -200,17 +200,17 @@ export default function StaffQueueDashboard({
               </div>
             ) : (
               calledEntries.map((entry) => (
-                <div key={entry.id} className="bg-slate-950 border border-slate-850 p-4 rounded-xl space-y-4">
+                <div key={entry.id} className="bg-zinc-950 border border-zinc-900 p-4 rounded-xl space-y-4">
                   <div className="text-left">
-                    <span className="text-sm font-bold text-slate-200 block">{entry.customerName}</span>
-                    <span className="text-xs text-slate-500 block mt-0.5">{entry.customerPhone}</span>
+                    <span className="text-sm font-bold text-zinc-200 block">{entry.customerName}</span>
+                    <span className="text-xs text-zinc-500 block mt-0.5">{entry.customerPhone}</span>
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleAction(`/api/entries/${entry.id}/serving`, entry.id, "serving")}
                       disabled={isMutating !== null}
-                      className="flex-1 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-400 text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer"
+                      className="flex-1 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer"
                     >
                       {isMutating === `serving-${entry.id}` ? "Serving..." : "Serve"}
                     </button>
@@ -229,28 +229,28 @@ export default function StaffQueueDashboard({
         </div>
 
         {/* COLUMN 3: WAITING CUSTOMERS */}
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 flex flex-col h-[500px]">
+        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 flex flex-col h-[500px]">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
+            <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500" />
               Waiting ({waitingEntries.length})
             </h2>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {waitingEntries.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs py-8">
+              <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-xs py-8">
                 Waiting line is empty
               </div>
             ) : (
               waitingEntries.map((entry) => (
-                <div key={entry.id} className="bg-slate-950 border border-slate-850 p-4 rounded-xl space-y-3">
+                <div key={entry.id} className="bg-zinc-950 border border-zinc-900 p-4 rounded-xl space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="text-left">
-                      <span className="text-sm font-bold text-slate-200 block">{entry.customerName}</span>
-                      <span className="text-xs text-slate-500 block mt-0.5">{entry.customerPhone}</span>
+                      <span className="text-sm font-bold text-zinc-200 block">{entry.customerName}</span>
+                      <span className="text-xs text-zinc-500 block mt-0.5">{entry.customerPhone}</span>
                     </div>
-                    <span className="text-xs uppercase tracking-widest text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-md">
+                    <span className="text-xs uppercase tracking-widest text-zinc-300 font-bold bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded-md">
                       #{entry.position}
                     </span>
                   </div>
@@ -266,7 +266,7 @@ export default function StaffQueueDashboard({
                     <button
                       onClick={() => handleAction(`/api/entries/${entry.id}/skip`, entry.id, "skip")}
                       disabled={isMutating !== null}
-                      className="flex-1 bg-slate-800/40 hover:bg-slate-800/70 border border-slate-700/35 text-slate-300 text-[10px] font-semibold py-1.5 rounded-lg transition-colors cursor-pointer min-w-[50px]"
+                      className="flex-1 bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-850 text-zinc-300 text-[10px] font-semibold py-1.5 rounded-lg transition-colors cursor-pointer min-w-[50px]"
                     >
                       {isMutating === `skip-${entry.id}` ? "Skipping..." : "Skip"}
                     </button>
@@ -281,7 +281,7 @@ export default function StaffQueueDashboard({
                       <button
                         onClick={() => handleAction(`/api/entries/${entry.id}/move-to-top`, entry.id, "move-to-top")}
                         disabled={isMutating !== null}
-                        className="w-full bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-400 text-[10px] font-semibold py-1.5 rounded-lg transition-colors cursor-pointer"
+                        className="w-full bg-white hover:bg-zinc-200 text-black text-[10px] font-semibold py-1.5 rounded-lg transition-colors cursor-pointer"
                       >
                         {isMutating === `move-to-top-${entry.id}` ? "Moving..." : "⚡ Move to Top"}
                       </button>

@@ -7,13 +7,13 @@ import { UserRole } from "@prisma/client";
 
 interface RouteContext {
   params: Promise<{
-    queueEntryId: string;
+    trackingToken: string;
     action: string;
   }>;
 }
 
 /**
- * POST /api/entries/[queueEntryId]/[action]
+ * POST /api/entries/[trackingToken]/[action]
  * Staff-only actions on specific queue entries: call, skip, cancel, serving, complete, move-to-top.
  */
 export async function POST(request: Request, context: RouteContext) {
@@ -23,13 +23,13 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { queueEntryId, action } = await context.params;
+    const { trackingToken, action } = await context.params;
     const actor = { id: session.user.id, role: session.user.role as UserRole };
     const businessId = session.user.businessId;
 
     // 1. Fetch entry to verify businessId and obtain queueId
     const entry = await prisma.queueEntry.findUnique({
-      where: { id: queueEntryId },
+      where: { id: trackingToken },
     });
 
     if (!entry) {
@@ -46,22 +46,22 @@ export async function POST(request: Request, context: RouteContext) {
     // 2. Delegate to the correct service method based on action
     switch (action) {
       case "call":
-        result = await QueueService.callSpecificEntry(businessId, queueId, queueEntryId, actor);
+        result = await QueueService.callSpecificEntry(businessId, queueId, trackingToken, actor);
         break;
       case "skip":
-        result = await QueueService.skipEntry(businessId, queueId, queueEntryId, actor);
+        result = await QueueService.skipEntry(businessId, queueId, trackingToken, actor);
         break;
       case "cancel":
-        result = await QueueService.cancelEntryByStaff(businessId, queueId, queueEntryId, actor);
+        result = await QueueService.cancelEntryByStaff(businessId, queueId, trackingToken, actor);
         break;
       case "serving":
-        result = await QueueService.startServingEntry(businessId, queueId, queueEntryId, actor);
+        result = await QueueService.startServingEntry(businessId, queueId, trackingToken, actor);
         break;
       case "complete":
-        result = await QueueService.completeServingEntry(businessId, queueId, queueEntryId, actor);
+        result = await QueueService.completeServingEntry(businessId, queueId, trackingToken, actor);
         break;
       case "move-to-top":
-        result = await QueueService.moveToTop(businessId, queueId, queueEntryId, actor);
+        result = await QueueService.moveToTop(businessId, queueId, trackingToken, actor);
         break;
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });

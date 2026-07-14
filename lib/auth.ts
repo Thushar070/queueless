@@ -74,22 +74,9 @@ export const authOptions: NextAuthOptions = {
           return false;
         }
 
-        // Check if the user exists in our database as Staff or SuperAdmin
-        const staff = await prisma.staff.findUnique({
-          where: { email: user.email },
-        });
-        if (staff) {
-          return true;
-        }
-
-        const admin = await prisma.superAdmin.findUnique({
-          where: { email: user.email },
-        });
-        if (admin) {
-          return true;
-        }
-
-        return false; // Reject Google accounts that are not registered staff or admin
+        // Allow Google login. If they don't have a staff/admin record, they will have no businessId
+        // and will be redirected to /signup/business to complete onboarding.
+        return true;
       }
       return true;
     },

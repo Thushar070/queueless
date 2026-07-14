@@ -15,10 +15,10 @@ export default withAuth(
 
     // 2. Guard for /dashboard/* -> Requires authenticated session with a businessId
     if (pathname.startsWith("/dashboard")) {
-      if (token?.role !== "BUSINESS_OWNER" && token?.role !== "STAFF") {
-        return NextResponse.redirect(new URL("/login", req.url));
-      }
       if (!token?.businessId) {
+        return NextResponse.redirect(new URL("/signup/business", req.url));
+      }
+      if (token?.role !== "BUSINESS_OWNER" && token?.role !== "STAFF") {
         return NextResponse.redirect(new URL("/login", req.url));
       }
     }

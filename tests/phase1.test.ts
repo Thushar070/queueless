@@ -242,7 +242,7 @@ describe("Phase 1 - Verification Tests", () => {
 
       const req = new NextRequest("http://localhost/dashboard/queues");
       const res = await middleware(req, {} as unknown as NextFetchEvent);
-      expect(res?.headers.get("location")).toContain("/login");
+      expect(res?.headers.get("location")).toContain("/signup/business");
     });
   });
 

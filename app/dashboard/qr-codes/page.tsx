@@ -91,35 +91,38 @@ export default function QrCodesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
+      {/* Grid background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
+
       {/* Header */}
-      <header className="border-b border-slate-900 bg-slate-900/30 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <Link href="/dashboard" className="text-xl font-bold text-white tracking-tight">
             QueueLess
           </Link>
           <nav className="hidden md:flex gap-4">
-            <Link href="/dashboard/queues" className="text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors">
+            <Link href="/dashboard/queues" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
               Queues
             </Link>
-            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-slate-100 border-b-2 border-indigo-500 pb-1">
+            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
               QR Codes
             </Link>
           </nav>
         </div>
         <Link
           href="/dashboard"
-          className="text-xs text-slate-400 hover:text-slate-200 border border-slate-800 rounded-lg px-3 py-1.5 transition-colors"
+          className="text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg px-3 py-1.5 transition-colors"
         >
           Back to Overview
         </Link>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-8">
+      <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-8 z-10 relative text-left">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-100">Queue QR Codes</h2>
-          <p className="text-slate-400 text-sm mt-1">Download and print QR codes for customers to join virtual queues instantly</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-white">Queue QR Codes</h2>
+          <p className="text-zinc-400 text-sm mt-1">Download and print QR codes for customers to join virtual queues instantly</p>
         </div>
 
         {error && (
@@ -133,18 +136,18 @@ export default function QrCodesPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500" />
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
           </div>
         ) : queues.length === 0 ? (
-          <div className="text-center py-20 bg-slate-900/20 border border-slate-900 rounded-2xl p-8">
-            <svg className="w-12 h-12 mx-auto text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="text-center py-20 bg-zinc-950 border border-zinc-900 rounded-2xl p-8">
+            <svg className="w-12 h-12 mx-auto text-zinc-650 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m0 11v1m5-10v1m0-7H7m0 14h10M4 17h16" />
             </svg>
-            <h3 className="text-lg font-bold text-slate-300">No queues active</h3>
-            <p className="text-slate-500 text-sm mt-1 mb-6">Create a queue first under the Queues tab to generate QR codes.</p>
+            <h3 className="text-lg font-bold text-zinc-300">No queues active</h3>
+            <p className="text-zinc-500 text-sm mt-1 mb-6">Create a queue first under the Queues tab to generate QR codes.</p>
             <Link
               href="/dashboard/queues"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors cursor-pointer inline-block"
+              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-100 font-semibold text-xs px-4 py-2.5 rounded-lg transition-colors cursor-pointer inline-block"
             >
               Go to Queues
             </Link>
@@ -185,12 +188,12 @@ export default function QrCodesPage() {
                 </div>
 
                 {/* Card Action footer */}
-                <div className="w-full flex gap-3 mt-6 border-t border-slate-850 pt-4">
+                <div className="w-full flex gap-3 mt-6 border-t border-zinc-900 pt-4">
                   {queue.qrCodeUrl && (
                     <a
                       href={queue.qrCodeUrl}
                       download={`${queue.slug}-qr-code.png`}
-                      className="flex-1 text-center bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs py-2 px-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      className="flex-1 text-center bg-white hover:bg-zinc-200 text-black font-semibold text-xs py-2 px-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -201,10 +204,10 @@ export default function QrCodesPage() {
                   <button
                     onClick={() => regenerateQr(queue.id)}
                     disabled={regeneratingId === queue.id}
-                    className="bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 text-[11px] font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="bg-black hover:bg-zinc-900 border border-zinc-900 text-zinc-400 hover:text-white text-[11px] font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     {regeneratingId === queue.id ? (
-                      <div className="animate-spin rounded-full h-3 h-3 border-t-2 border-indigo-400 w-3" />
+                      <div className="animate-spin rounded-full h-3 h-3 border-t-2 border-white w-3" />
                     ) : (
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6.308l-2.29 2.29" />

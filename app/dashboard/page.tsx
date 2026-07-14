@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -9,8 +10,8 @@ export default function DashboardPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500" />
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
       </div>
     );
   }
@@ -21,49 +22,67 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
+      {/* Grid background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
+
       {/* Header */}
-      <header className="border-b border-slate-900 bg-slate-900/30 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
+        <h1 className="text-xl font-bold text-white tracking-tight">
           QueueLess Dashboard
         </h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
-        >
-          Sign Out
-        </button>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/queues"
+            className="text-xs bg-white text-black font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          >
+            Manage Queues
+          </Link>
+          <Link
+            href="/dashboard/qr-codes"
+            className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold px-4 py-2 rounded-lg hover:bg-zinc-850 transition-colors"
+          >
+            QR Codes
+          </Link>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 font-semibold px-4 py-2 rounded-lg hover:text-white transition-colors cursor-pointer"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 max-w-4xl mx-auto w-full space-y-8">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 relative overflow-hidden shadow-xl">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <h2 className="text-2xl font-extrabold text-slate-100 mb-6">Welcome Back!</h2>
-          
+      <main className="flex-1 p-8 max-w-4xl mx-auto w-full space-y-8 z-10 flex flex-col justify-center">
+        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 shadow-xl space-y-6">
+          <div>
+            <h2 className="text-2xl font-extrabold text-white">Welcome Back!</h2>
+            <p className="text-xs text-zinc-400 mt-1">Tenant verification and session parameters</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-slate-950 border border-slate-900 rounded-xl p-4 space-y-1">
-              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Authenticated As</span>
-              <p className="text-sm text-slate-200 font-semibold truncate">{session?.user?.email}</p>
+            <div className="bg-black border border-zinc-900 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-zinc-550 font-semibold uppercase tracking-wider block">Authenticated As</span>
+              <span className="text-sm text-zinc-200 font-bold truncate block">{session?.user?.email}</span>
             </div>
 
-            <div className="bg-slate-950 border border-slate-900 rounded-xl p-4 space-y-1">
-              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Assigned Role</span>
-              <p className="text-sm text-slate-200 font-semibold text-emerald-400">{session?.user?.role}</p>
+            <div className="bg-black border border-zinc-900 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-zinc-550 font-semibold uppercase tracking-wider block">Assigned Role</span>
+              <span className="text-sm text-zinc-200 font-bold block">{session?.user?.role}</span>
             </div>
 
-            <div className="bg-slate-950 border border-slate-900 rounded-xl p-4 space-y-1">
-              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Business ID</span>
-              <p className="text-sm text-slate-200 font-mono text-indigo-300 truncate">
+            <div className="bg-black border border-zinc-900 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-zinc-550 font-semibold uppercase tracking-wider block">Business ID</span>
+              <span className="text-sm text-zinc-300 font-mono truncate block">
                 {session?.user?.businessId || "N/A"}
-              </p>
+              </span>
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-800/60">
-            <p className="text-sm text-slate-400">
-              This is the empty dashboard shell for Phase 1. Complete tenant isolation is verified.
+          <div className="pt-6 border-t border-zinc-900 text-left">
+            <p className="text-xs text-zinc-500">
+              Account linked successfully. Use the &quot;Manage Queues&quot; panel above to configure queues, call customers, and monitor live statuses.
             </p>
           </div>
         </div>

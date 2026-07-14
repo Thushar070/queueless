@@ -201,25 +201,28 @@ export default function QueuesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
+      {/* Grid background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
+
       {/* Header */}
-      <header className="border-b border-slate-900 bg-slate-900/30 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <Link href="/dashboard" className="text-xl font-bold text-white tracking-tight">
             QueueLess
           </Link>
           <nav className="hidden md:flex gap-4">
-            <Link href="/dashboard/queues" className="text-sm font-semibold text-slate-100 border-b-2 border-indigo-500 pb-1">
+            <Link href="/dashboard/queues" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
               Queues
             </Link>
-            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors">
+            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
               QR Codes
             </Link>
           </nav>
         </div>
         <Link
           href="/dashboard"
-          className="text-xs text-slate-400 hover:text-slate-200 border border-slate-800 rounded-lg px-3 py-1.5 transition-colors"
+          className="text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg px-3 py-1.5 transition-colors"
         >
           Back to Overview
         </Link>
@@ -229,15 +232,15 @@ export default function QueuesPage() {
       <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-100">Manage Queues</h2>
-            <p className="text-slate-400 text-sm mt-1">Create, configure, and monitor your customer waiting lines</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-white">Manage Queues</h2>
+            <p className="text-zinc-400 text-sm mt-1">Create, configure, and monitor your customer waiting lines</p>
           </div>
           <button
             onClick={() => {
               reset();
               setIsCreateOpen(true);
             }}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+            className="bg-white hover:bg-zinc-200 text-black font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -247,7 +250,7 @@ export default function QueuesPage() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
@@ -257,18 +260,18 @@ export default function QueuesPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500" />
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
           </div>
         ) : queues.length === 0 ? (
-          <div className="text-center py-20 bg-slate-900/20 border border-slate-900 rounded-2xl p-8">
-            <svg className="w-12 h-12 mx-auto text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="text-center py-20 bg-zinc-950 border border-zinc-900 rounded-2xl p-8">
+            <svg className="w-12 h-12 mx-auto text-zinc-650 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <h3 className="text-lg font-bold text-slate-300">No queues active</h3>
-            <p className="text-slate-500 text-sm mt-1 mb-6">Create your first virtual queue to start serving walk-in customers.</p>
+            <h3 className="text-lg font-bold text-zinc-300">No queues active</h3>
+            <p className="text-zinc-500 text-sm mt-1 mb-6">Create your first virtual queue to start serving walk-in customers.</p>
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 font-semibold text-xs px-4 py-2 border border-indigo-500/30 rounded-lg transition-colors cursor-pointer"
+              className="bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 font-semibold text-xs px-4 py-2 rounded-lg transition-colors cursor-pointer"
             >
               Configure First Queue
             </button>
@@ -278,7 +281,7 @@ export default function QueuesPage() {
             {queues.map((queue) => (
               <div
                 key={queue.id}
-                className="bg-slate-900/40 border border-slate-800 rounded-xl p-6 relative overflow-hidden transition-all hover:-translate-y-0.5 shadow-md flex flex-col justify-between"
+                className="bg-zinc-950 border border-zinc-900 rounded-xl p-6 relative overflow-hidden transition-all hover:-translate-y-0.5 shadow-md flex flex-col justify-between"
               >
                 {/* Upper Details */}
                 <div>
@@ -348,13 +351,13 @@ export default function QueuesPage() {
       </main>
 
       {/* Overlay Modal for Create / Edit */}
+      {/* Overlay Modal for Create / Edit */}
       {(isCreateOpen || editingQueue !== null) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
 
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-100">
+              <h3 className="text-xl font-bold text-white">
                 {editingQueue ? "Edit Queue Configuration" : "Create New Virtual Queue"}
               </h3>
               <button
@@ -363,7 +366,7 @@ export default function QueuesPage() {
                   setEditingQueue(null);
                   reset();
                 }}
-                className="text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                className="text-zinc-500 hover:text-white transition-colors cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -373,10 +376,10 @@ export default function QueuesPage() {
 
             <form
               onSubmit={handleSubmit(editingQueue ? onEditSubmit : onCreateSubmit)}
-              className="space-y-4"
+              className="space-y-4 text-left"
             >
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="name">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="name">
                   Queue Name
                 </label>
                 <input
@@ -385,13 +388,13 @@ export default function QueuesPage() {
                   required
                   placeholder="Checkup Queue"
                   {...register("name")}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+                  className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
                 />
                 {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="avgServiceTimeMin">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="avgServiceTimeMin">
                   Average Service Duration (Minutes per customer)
                 </label>
                 <input
@@ -400,7 +403,7 @@ export default function QueuesPage() {
                   required
                   placeholder="8"
                   {...register("avgServiceTimeMin", { valueAsNumber: true })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+                  className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
                 />
                 {errors.avgServiceTimeMin && (
                   <p className="text-red-400 text-xs mt-1">{errors.avgServiceTimeMin.message}</p>
@@ -408,7 +411,7 @@ export default function QueuesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="maxCapacity">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="maxCapacity">
                   Max Capacity / Capacity Limit (Optional)
                 </label>
                 <input
@@ -418,7 +421,7 @@ export default function QueuesPage() {
                   {...register("maxCapacity", {
                     setValueAs: (val) => (val === "" ? null : parseInt(val, 10)),
                   })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+                  className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
                 />
                 {errors.maxCapacity && (
                   <p className="text-red-400 text-xs mt-1">{errors.maxCapacity.message}</p>
@@ -427,7 +430,7 @@ export default function QueuesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="workingHoursStart">
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="workingHoursStart">
                     Working Hours Start (HH:MM)
                   </label>
                   <input
@@ -437,7 +440,7 @@ export default function QueuesPage() {
                     {...register("workingHoursStart", {
                       setValueAs: (val) => (val === "" ? null : val),
                     })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+                    className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
                   />
                   {errors.workingHoursStart && (
                     <p className="text-red-400 text-xs mt-1">{errors.workingHoursStart.message}</p>
@@ -445,7 +448,7 @@ export default function QueuesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1" htmlFor="workingHoursEnd">
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="workingHoursEnd">
                     Working Hours End (HH:MM)
                   </label>
                   <input
@@ -455,7 +458,7 @@ export default function QueuesPage() {
                     {...register("workingHoursEnd", {
                       setValueAs: (val) => (val === "" ? null : val),
                     })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+                    className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
                   />
                   {errors.workingHoursEnd && (
                     <p className="text-red-400 text-xs mt-1">{errors.workingHoursEnd.message}</p>
@@ -466,7 +469,7 @@ export default function QueuesPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-indigo-800 disabled:to-purple-800 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
+                className="w-full bg-white hover:bg-zinc-200 disabled:bg-zinc-850 disabled:text-zinc-650 text-black text-sm font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
               >
                 {isSubmitting
                   ? "Saving Changes..."
