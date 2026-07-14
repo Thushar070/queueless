@@ -350,8 +350,65 @@ export class QueueService {
   /**
    * Staff calls the next WAITING entry (repositioning other entries).
    */
-  static async callNextEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+  static async callNextEntry(
+    businessId: string,
+    queueId: string,
+    actor: { id: string; role: UserRole }
+  ) {
     return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify queue ownership
+      const queue = await tx.queue.findFirst({
+        where: { id: queueId, businessId, deletedAt: null },
+      });
+      if (!queue) {
+        throw new Error("Queue not found or unauthorized");
+      }
+
+      // 2. Find WAITING entry with the lowest position
+      const nextEntry = await tx.queueEntry.findFirst({
+        where: { queueId, status: QueueEntryStatus.WAITING },
+        orderBy: { position: "asc" },
+      });
+
+      if (!nextEntry) {
+        throw new Error("No customer in the queue");
+      }
+
+      return await QueueEntryService.transition(
+        nextEntry.id,
+        QueueEntryStatus.CALLED,
+        actor,
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff calls a specific WAITING entry out of order.
+   */
+  static async callSpecificEntry(
+    businessId: string,
+    queueId: string,
+    entryId: string,
+    actor: { id: string; role: UserRole }
+  ) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify queue ownership
+      const queue = await tx.queue.findFirst({
+        where: { id: queueId, businessId, deletedAt: null },
+      });
+      if (!queue) {
+        throw new Error("Queue not found or unauthorized");
+      }
+
+      // 2. Verify entry exists and belongs to this queue/business and is WAITING
+      const entry = await tx.queueEntry.findFirst({
+        where: { id: entryId, queueId, businessId, status: QueueEntryStatus.WAITING },
+      });
+      if (!entry) {
+        throw new Error("Queue entry not found or not WAITING");
+      }
+
       return await QueueEntryService.transition(
         entryId,
         QueueEntryStatus.CALLED,
@@ -364,9 +421,21 @@ export class QueueService {
   /**
    * Staff updates an entry state to SERVING.
    */
-  static async startServingEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
-    // Standard transition, lock is not strictly needed for position but safe to keep consistent
+  static async startServingEntry(
+    businessId: string,
+    queueId: string,
+    entryId: string,
+    actor: { id: string; role: UserRole }
+  ) {
     return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify entry ownership and correct state (must be CALLED)
+      const entry = await tx.queueEntry.findFirst({
+        where: { id: entryId, queueId, businessId, status: QueueEntryStatus.CALLED },
+      });
+      if (!entry) {
+        throw new Error("Queue entry not found or not CALLED");
+      }
+
       return await QueueEntryService.transition(
         entryId,
         QueueEntryStatus.SERVING,
@@ -379,8 +448,21 @@ export class QueueService {
   /**
    * Staff updates an entry state to COMPLETED.
    */
-  static async completeServingEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+  static async completeServingEntry(
+    businessId: string,
+    queueId: string,
+    entryId: string,
+    actor: { id: string; role: UserRole }
+  ) {
     return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify entry ownership and correct state (must be SERVING)
+      const entry = await tx.queueEntry.findFirst({
+        where: { id: entryId, queueId, businessId, status: QueueEntryStatus.SERVING },
+      });
+      if (!entry) {
+        throw new Error("Queue entry not found or not SERVING");
+      }
+
       return await QueueEntryService.transition(
         entryId,
         QueueEntryStatus.COMPLETED,
@@ -393,8 +475,21 @@ export class QueueService {
   /**
    * Staff skips a WAITING entry (repositioning other entries).
    */
-  static async skipEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+  static async skipEntry(
+    businessId: string,
+    queueId: string,
+    entryId: string,
+    actor: { id: string; role: UserRole }
+  ) {
     return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify entry ownership and correct state (must be WAITING)
+      const entry = await tx.queueEntry.findFirst({
+        where: { id: entryId, queueId, businessId, status: QueueEntryStatus.WAITING },
+      });
+      if (!entry) {
+        throw new Error("Queue entry not found or not WAITING");
+      }
+
       return await QueueEntryService.transition(
         entryId,
         QueueEntryStatus.SKIPPED,
@@ -407,8 +502,26 @@ export class QueueService {
   /**
    * Staff cancels a called or waiting entry.
    */
-  static async cancelEntryByStaff(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+  static async cancelEntryByStaff(
+    businessId: string,
+    queueId: string,
+    entryId: string,
+    actor: { id: string; role: UserRole }
+  ) {
     return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify entry ownership and state (can be WAITING or CALLED)
+      const entry = await tx.queueEntry.findFirst({
+        where: {
+          id: entryId,
+          queueId,
+          businessId,
+          status: { in: [QueueEntryStatus.WAITING, QueueEntryStatus.CALLED] },
+        },
+      });
+      if (!entry) {
+        throw new Error("Queue entry not found or cannot be cancelled by staff");
+      }
+
       return await QueueEntryService.transition(
         entryId,
         QueueEntryStatus.CANCELLED,
@@ -421,7 +534,12 @@ export class QueueService {
   /**
    * Staff moves a WAITING entry to position 1, shifting all others.
    */
-  static async moveToTop(businessId: string, queueId: string, entryId: string) {
+  static async moveToTop(
+    businessId: string,
+    queueId: string,
+    entryId: string,
+    actor?: { id: string; role: UserRole }
+  ) {
     return await this.withQueueLock(queueId, async (tx) => {
       const entry = await tx.queueEntry.findFirst({
         where: { id: entryId, queueId, businessId, status: QueueEntryStatus.WAITING },
@@ -441,7 +559,7 @@ export class QueueService {
         },
       });
 
-      // Update target entry
+      // Update target entry to position 1
       await tx.queueEntry.update({
         where: { id: entryId },
         data: { position: 1 },
@@ -454,6 +572,22 @@ export class QueueService {
           data: { position: i + 2 },
         });
       }
+
+      // Record AuditLog manual override
+      await tx.auditLog.create({
+        data: {
+          businessId,
+          actorId: actor?.id || "SYSTEM",
+          actorRole: actor?.role || UserRole.STAFF,
+          action: "QUEUE_ENTRY_MOVE_TO_TOP",
+          targetType: "QueueEntry",
+          targetId: entryId,
+          metadata: {
+            previousPosition: entry.position,
+            newPosition: 1,
+          },
+        },
+      });
 
       return entry;
     });
