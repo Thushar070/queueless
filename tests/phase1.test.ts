@@ -21,14 +21,14 @@ jest.mock("next-auth/jwt", () => ({
 describe("Phase 1 - Verification Tests", () => {
   jest.setTimeout(30000);
 
-  const testBusinessName = "TEST_Business_A";
+  const testBusinessName = "TEST1_Business_A";
   const testBusinessSlug = "test-business-a";
   const testBusinessEmail = "info@test-business-a.com";
   const testOwnerName = "Test Owner A";
   const testOwnerEmail = "owner@test-business-a.com";
   const testPassword = "password123";
 
-  const testBusinessNameB = "TEST_Business_B";
+  const testBusinessNameB = "TEST1_Business_B";
   const testBusinessSlugB = "test-business-b";
   const testBusinessEmailB = "info@test-business-b.com";
   const testOwnerNameB = "Test Owner B";
@@ -42,7 +42,7 @@ describe("Phase 1 - Verification Tests", () => {
   // Cleanup before and after tests
   const cleanup = async () => {
     const testBusinesses = await prisma.business.findMany({
-      where: { name: { startsWith: "TEST_" } },
+      where: { name: { startsWith: "TEST1_" } },
     });
     const ids = testBusinesses.map((b) => b.id);
     if (ids.length > 0) {
@@ -126,7 +126,7 @@ describe("Phase 1 - Verification Tests", () => {
         await prisma.$transaction(async (tx) => {
           const b = await tx.business.create({
             data: {
-              name: "TEST_Transaction_Rollback_Business",
+              name: "TEST1_Transaction_Rollback_Business",
               slug: "test-rollback-slug",
               email: "rollback@test.com",
             },
