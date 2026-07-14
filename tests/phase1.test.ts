@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import middleware from "@/middleware";
 import { NextRequest, NextFetchEvent } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { getToken } from "next-auth/jwt";
 
@@ -288,6 +288,24 @@ describe("Phase 1 - Verification Tests", () => {
 
   // 5. Direct RLS Test
   describe("Direct Row-Level Security", () => {
+    async function selectWithRetry(client: SupabaseClient, table: string, selectFields = "*", retries = 5, delay = 2000) {
+      for (let i = 0; i < retries; i++) {
+        const result = await client.from(table).select(selectFields);
+        if (result.error && (
+          result.error.message?.includes("fetch failed") || 
+          result.error.details?.includes("ECONNRESET") ||
+          result.error.details?.includes("ENETUNREACH")
+        )) {
+          if (i === retries - 1) return result;
+          console.warn(`Supabase network fetch failed (attempt ${i + 1}/${retries}). Retrying in ${delay}ms...`);
+          await new Promise((res) => setTimeout(res, delay));
+          continue;
+        }
+        return result;
+      }
+      throw new Error("Unreachable");
+    }
+
     it("asserts RLS blocks direct client reads if role is not owner or claims mismatch", async () => {
       const supabaseUrl = process.env.SUPABASE_URL!;
       const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
@@ -295,7 +313,7 @@ describe("Phase 1 - Verification Tests", () => {
 
       const anonClient = createClient(supabaseUrl, supabaseAnonKey);
 
-      const { data, error } = await anonClient.from("Staff").select("*");
+      const { data, error } = await selectWithRetry(anonClient, "Staff");
 
       expect(error).toBeNull();
       expect(data?.length).toBe(0);
@@ -321,9 +339,7 @@ describe("Phase 1 - Verification Tests", () => {
           },
         });
 
-        const { data: staffData, error: staffError } = await clientA
-          .from("Staff")
-          .select("*");
+        const { data: staffData, error: staffError } = await selectWithRetry(clientA, "Staff");
 
         if (staffError && (staffError as { code: string }).code === "PGRST301") {
           console.log("Skipped signed JWT cross-tenant RLS test: Database rejected JWT (invalid SUPABASE_JWT_SECRET).");
