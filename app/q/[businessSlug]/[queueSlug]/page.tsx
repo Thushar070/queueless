@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import JoinForm from "@/components/join-form";
 
 interface PublicQueuePageProps {
   params: Promise<{
@@ -73,10 +74,14 @@ export default async function PublicQueuePage({ params }: PublicQueuePageProps) 
           </div>
         </div>
 
-        {/* Phase 2 Placeholder stub note */}
-        <div className="border border-indigo-500/20 bg-indigo-500/5 rounded-xl p-4 text-xs text-indigo-400 leading-relaxed text-left">
-          <p className="font-bold mb-1">ℹ️ Phase 2 Stub Notice</p>
-          This public join page is a placeholder verifying QR code routing. Customer queue registration, position estimation, wait time calculation, and concurrent session tracking will be implemented in Phase 3.
+        <div className="pt-4 border-t border-slate-800/60">
+          {queue.status === "OPEN" ? (
+            <JoinForm queueId={queue.id} />
+          ) : (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm px-4 py-4 rounded-xl font-medium">
+              ⚠️ This queue is currently closed. Registration is unavailable.
+            </div>
+          )}
         </div>
       </div>
     </main>

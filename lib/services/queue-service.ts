@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
-import { Prisma } from "@prisma/client";
+import crypto from "crypto";
+import { Prisma, QueueEntryStatus, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   createQueueSchema,
@@ -7,6 +8,7 @@ import {
   CreateQueueInput,
   UpdateQueueInput,
 } from "@/lib/validation/queue";
+import { QueueEntryService } from "./queue-entry-service";
 
 export class QueueService {
   /**
@@ -189,6 +191,271 @@ export class QueueService {
     return await prisma.queue.update({
       where: { id: queueId },
       data: { qrCodeUrl },
+    });
+  }
+
+  /**
+   * Serializes all queue entry position mutations by acquiring a row lock on the parent Queue
+   * and the WAITING entries, then recalculates positions sequentially (1..N).
+   */
+  static async withQueueLock<T>(
+    queueId: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>
+  ): Promise<T> {
+    return await prisma.$transaction(
+      async (tx) => {
+        // 1. Lock the parent Queue row to serialize operations on empty queues
+        await tx.$executeRaw`
+          SELECT id FROM "Queue" WHERE id = ${queueId} FOR UPDATE
+        `;
+
+        // 2. Lock WAITING entries
+        await tx.$executeRaw`
+          SELECT id FROM "QueueEntry" WHERE "queueId" = ${queueId} AND status = 'WAITING' FOR UPDATE
+        `;
+
+        // 3. Execute the payload mutation
+        const result = await fn(tx);
+
+        // 4. Recalculate positions for all remaining WAITING rows sequentially (1..N)
+        const activeEntries = await tx.queueEntry.findMany({
+        where: {
+          queueId,
+          status: QueueEntryStatus.WAITING,
+        },
+        orderBy: [
+          { position: "asc" },
+          { joinedAt: "asc" },
+        ],
+      });
+
+        for (let i = 0; i < activeEntries.length; i++) {
+          const newPos = i + 1;
+          if (activeEntries[i].position !== newPos) {
+            await tx.queueEntry.update({
+               where: { id: activeEntries[i].id },
+               data: { position: newPos },
+            });
+          }
+        }
+
+        return result;
+      },
+      {
+        maxWait: 25000, // 25 seconds wait time for connection pool
+        timeout: 45000, // 45 seconds transaction timeout
+      }
+    );
+  }
+
+  /**
+   * Joins a customer to a queue, enforcing duplicate prevention rules under the serialization lock.
+   */
+  static async joinQueue(
+    queueId: string,
+    input: { customerName: string; customerPhone: string; customerEmail?: string | null }
+  ) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      // 1. Verify Queue exists and is open
+      const queue = await tx.queue.findFirst({
+        where: { id: queueId, deletedAt: null },
+      });
+      if (!queue) {
+        throw new Error("Queue not found");
+      }
+      if (queue.status !== "OPEN") {
+        throw new Error("Queue is closed");
+      }
+
+      // 2. Check for active duplicate joins (same phone OR same email)
+      const duplicateConditions: Prisma.QueueEntryScalarWhereWithAggregatesInput[] = [
+        { customerPhone: input.customerPhone },
+      ];
+      if (input.customerEmail) {
+        duplicateConditions.push({ customerEmail: input.customerEmail });
+      }
+
+      const duplicate = await tx.queueEntry.findFirst({
+        where: {
+          queueId,
+          status: QueueEntryStatus.WAITING,
+          OR: duplicateConditions,
+        },
+      });
+
+      if (duplicate) {
+        throw new Error("You are already in this queue");
+      }
+
+      // 3. Check for capacity limits
+      if (queue.maxCapacity !== null) {
+        const currentCount = await tx.queueEntry.count({
+          where: { queueId, status: QueueEntryStatus.WAITING },
+        });
+        if (currentCount >= queue.maxCapacity) {
+          throw new Error("Queue capacity limit has been reached");
+        }
+      }
+
+      // 4. Generate token and find next position
+      const trackingToken = crypto.randomUUID();
+      const currentCountForPosition = await tx.queueEntry.count({
+        where: { queueId, status: QueueEntryStatus.WAITING },
+      });
+
+      // 5. Insert new queue entry (position is naturally last, will be re-verified by recalculate)
+      return await tx.queueEntry.create({
+        data: {
+          queueId,
+          businessId: queue.businessId,
+          customerName: input.customerName,
+          customerPhone: input.customerPhone,
+          customerEmail: input.customerEmail || null,
+          position: currentCountForPosition + 1,
+          status: QueueEntryStatus.WAITING,
+          trackingToken,
+        },
+      });
+    });
+  }
+
+  /**
+   * Customer self-cancels from the queue. Only allowed if status is WAITING.
+   */
+  static async cancelEntry(trackingToken: string) {
+    // 1. Retrieve entry first to get queueId
+    const entry = await prisma.queueEntry.findUnique({
+      where: { trackingToken },
+    });
+
+    if (!entry) {
+      throw new Error("Queue entry not found");
+    }
+
+    if (entry.status !== QueueEntryStatus.WAITING) {
+      throw new Error("Self-cancellation is only allowed while WAITING");
+    }
+
+    // 2. Perform transition and position updates under lock
+    return await this.withQueueLock(entry.queueId, async (tx) => {
+      return await QueueEntryService.transition(
+        entry.id,
+        QueueEntryStatus.CANCELLED,
+        { id: null, role: null }, // Customer is actor
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff calls the next WAITING entry (repositioning other entries).
+   */
+  static async callNextEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      return await QueueEntryService.transition(
+        entryId,
+        QueueEntryStatus.CALLED,
+        actor,
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff updates an entry state to SERVING.
+   */
+  static async startServingEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+    // Standard transition, lock is not strictly needed for position but safe to keep consistent
+    return await this.withQueueLock(queueId, async (tx) => {
+      return await QueueEntryService.transition(
+        entryId,
+        QueueEntryStatus.SERVING,
+        actor,
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff updates an entry state to COMPLETED.
+   */
+  static async completeServingEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      return await QueueEntryService.transition(
+        entryId,
+        QueueEntryStatus.COMPLETED,
+        actor,
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff skips a WAITING entry (repositioning other entries).
+   */
+  static async skipEntry(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      return await QueueEntryService.transition(
+        entryId,
+        QueueEntryStatus.SKIPPED,
+        actor,
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff cancels a called or waiting entry.
+   */
+  static async cancelEntryByStaff(businessId: string, queueId: string, entryId: string, actor: { id: string; role: UserRole }) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      return await QueueEntryService.transition(
+        entryId,
+        QueueEntryStatus.CANCELLED,
+        actor,
+        tx
+      );
+    });
+  }
+
+  /**
+   * Staff moves a WAITING entry to position 1, shifting all others.
+   */
+  static async moveToTop(businessId: string, queueId: string, entryId: string) {
+    return await this.withQueueLock(queueId, async (tx) => {
+      const entry = await tx.queueEntry.findFirst({
+        where: { id: entryId, queueId, businessId, status: QueueEntryStatus.WAITING },
+      });
+      if (!entry) {
+        throw new Error("Entry not found or not WAITING");
+      }
+
+      const otherWaiting = await tx.queueEntry.findMany({
+        where: {
+          queueId,
+          status: QueueEntryStatus.WAITING,
+          id: { not: entryId },
+        },
+        orderBy: {
+          joinedAt: "asc",
+        },
+      });
+
+      // Update target entry
+      await tx.queueEntry.update({
+        where: { id: entryId },
+        data: { position: 1 },
+      });
+
+      // Shift others
+      for (let i = 0; i < otherWaiting.length; i++) {
+        await tx.queueEntry.update({
+          where: { id: otherWaiting[i].id },
+          data: { position: i + 2 },
+        });
+      }
+
+      return entry;
     });
   }
 }
