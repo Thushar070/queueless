@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { QueueEntryStatus } from "@prisma/client";
 
 interface SerializedEntry {
@@ -21,34 +22,109 @@ interface SerializedEntry {
 
 interface TrackDashboardProps {
   initialEntry: SerializedEntry;
+  supabaseUrl: string;
+  supabaseAnonKey: string;
 }
 
-export default function TrackDashboard({ initialEntry }: TrackDashboardProps) {
+export default function TrackDashboard({
+  initialEntry,
+  supabaseUrl,
+  supabaseAnonKey,
+}: TrackDashboardProps) {
   const [entry, setEntry] = useState<SerializedEntry>(initialEntry);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(!!(supabaseUrl && supabaseAnonKey));
 
-  // Poll for queue status updates every 10 seconds (as static reads / refreshes in Phase 3)
+  // Authoritative server refetch of position/status
+  const refetchEntry = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/queues/status-check?token=${entry.trackingToken}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setEntry((prev) => ({ ...prev, ...data }));
+    } catch (err: unknown) {
+      console.error("Dashboard reload failed:", err);
+    }
+  }, [entry.trackingToken]);
+
+  // 1. Supabase Realtime WebSocket Subscription
   useEffect(() => {
-    let active = true;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/queues/status-check?token=${entry.trackingToken}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (active) {
-          setEntry((prev) => ({ ...prev, ...data }));
-        }
-      } catch {
-        // Silent catch for background polling
+    if (!supabaseUrl || !supabaseAnonKey) return;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    let connected = false;
+
+    // Timeout of 3s to declare socket connection failure/fallback
+    const timeout = setTimeout(() => {
+      if (!connected) {
+        setIsConnected(false);
       }
-    }, 10000);
+    }, 3000);
+
+    const channel = supabase
+      .channel(`queue-entry-${entry.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "QueueEntry",
+          filter: `id=eq.${entry.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            const newRecord = payload.new as { position?: number | null; status?: QueueEntryStatus };
+            setEntry((prev) => ({
+              ...prev,
+              position: typeof newRecord.position === "number" ? newRecord.position : prev.position,
+              status: newRecord.status || prev.status,
+            }));
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          connected = true;
+          setIsConnected(true);
+          clearTimeout(timeout);
+        } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+          setIsConnected(false);
+        }
+      });
 
     return () => {
-      active = false;
-      clearInterval(interval);
+      clearTimeout(timeout);
+      supabase.removeChannel(channel);
     };
-  }, [entry.trackingToken]);
+  }, [entry.id, supabaseUrl, supabaseAnonKey]);
+
+  // 2. Poll fallback (every 10s) triggered if live socket is disconnected
+  useEffect(() => {
+    if (isConnected) return;
+
+    const interval = setInterval(async () => {
+      await refetchEntry();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [isConnected, refetchEntry]);
+
+  // 3. One-time authoritative refetch on browser reconnect or tab visibility regain
+  useEffect(() => {
+    const handleRefetch = () => {
+      if (document.visibilityState === "visible") {
+        refetchEntry();
+      }
+    };
+
+    window.addEventListener("online", refetchEntry);
+    document.addEventListener("visibilitychange", handleRefetch);
+
+    return () => {
+      window.removeEventListener("online", refetchEntry);
+      document.removeEventListener("visibilitychange", handleRefetch);
+    };
+  }, [refetchEntry]);
 
   const handleCancel = async () => {
     if (!confirm("Are you sure you want to leave the virtual line?")) {
@@ -89,8 +165,11 @@ export default function TrackDashboard({ initialEntry }: TrackDashboardProps) {
 
       <div className="w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-2xl p-8 backdrop-blur-md shadow-2xl text-center space-y-6 z-10 relative">
         <div>
-          <span className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-full">
-            Live Ticket Status
+          <span className={`text-[10px] uppercase tracking-wider font-bold bg-zinc-900 border px-3 py-1 rounded-full inline-flex items-center gap-1.5 transition-colors ${
+            isConnected ? "text-emerald-450 border-emerald-500/20" : "text-zinc-400 border-zinc-800"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-zinc-550"}`} />
+            {isConnected ? "Live Socket" : "Polling fallback"}
           </span>
           <h1 className="text-3xl font-extrabold text-white mt-4 tracking-tight">
             {entry.queue.business.name}
@@ -167,7 +246,7 @@ export default function TrackDashboard({ initialEntry }: TrackDashboardProps) {
         {/* Info Notice */}
         <div className="border border-zinc-900 bg-zinc-950 rounded-xl p-4 text-[10px] text-zinc-450 leading-relaxed text-left">
           <p className="font-bold mb-1 text-zinc-350">ℹ️ QueueLess Live Refresh Info</p>
-          This ticket tracking page is a client component which updates via background polling (refresh) every 10 seconds. Realtime WebSockets updates via Supabase Subscriptions are configured on the staff operations panel.
+          This ticket tracking page is connected via live Supabase Realtime WebSockets. It will fall back to 10-second polling automatically if the connection is lost.
         </div>
       </div>
     </main>

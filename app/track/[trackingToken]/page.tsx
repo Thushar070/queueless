@@ -44,5 +44,14 @@ export default async function CustomerTrackingPage({ params }: CustomerTrackingP
     },
   };
 
-  return <TrackDashboard initialEntry={serializedEntry} />;
+  const supabaseUrl = process.env.SUPABASE_URL || "";
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
+
+  return (
+    <TrackDashboard
+      initialEntry={serializedEntry}
+      supabaseUrl={supabaseUrl}
+      supabaseAnonKey={supabaseAnonKey}
+    />
+  );
 }
