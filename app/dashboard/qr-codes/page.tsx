@@ -110,6 +110,12 @@ export default function QrCodesPage() {
             <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
               QR Codes
             </Link>
+            <Link href="/dashboard/analytics" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+              Analytics
+            </Link>
+            <Link href="/dashboard/audit-logs" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+              Audit Logs
+            </Link>
             {session?.user?.role === "BUSINESS_OWNER" && (
               <>
                 <Link href="/dashboard/staff" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
