@@ -205,7 +205,7 @@ describe("Phase 2 - Verification Tests", () => {
       expect(element).not.toBeNull();
       // Ensure it renders key pieces of information
       const mainProps = element.props;
-      expect(mainProps.className).toContain("bg-black");
+      expect(mainProps.className).toContain("bg-background");
     });
 
     it("rejects invalid business/queue slug combos with Next.js notFound redirection error", async () => {

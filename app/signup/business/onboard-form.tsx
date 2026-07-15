@@ -29,7 +29,6 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setName(val);
-    // Auto sugerir clean slug
     const clean = val
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -41,7 +40,7 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
     const val = e.target.value;
     const clean = val
       .toLowerCase()
-      .replace(/[^a-z0-9\-]+/g, ""); // Allow only alphanumeric and dashes manually
+      .replace(/[^a-z0-9\-]+/g, "");
     setSlug(clean);
   };
 
@@ -67,11 +66,8 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
         throw new Error(data.error || "Failed to create business");
       }
 
-      // Update NextAuth session to retrieve role/businessId from DB
       await update();
-      // Force NextAuth session refresh by triggering a hard reload or simple router refresh
       router.refresh();
-      // Redirect to dashboard
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -83,57 +79,57 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-left">
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-lg">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs px-4 py-3 rounded-lg text-left font-semibold">
           {error}
         </div>
       )}
 
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-400">Owner Email</label>
+        <label className="text-xs font-bold text-foreground">Owner Email</label>
         <input
           type="email"
           disabled
           value={email}
-          className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-500 select-none focus:outline-none"
+          className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground select-none focus:outline-none cursor-not-allowed"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-300">Business Name</label>
+        <label className="text-xs font-bold text-foreground">Business Name</label>
         <input
           type="text"
           required
           value={name}
           onChange={handleNameChange}
           placeholder="e.g. Acme Coffee Co."
-          className="w-full bg-black border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+          className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-300">Business URL Slug</label>
-        <div className="flex items-center gap-1 bg-black border border-zinc-800 rounded-lg px-3 py-2 focus-within:border-zinc-500 transition-colors">
-          <span className="text-sm text-zinc-600 select-none">{host}/q/</span>
+        <label className="text-xs font-bold text-foreground">Business URL Slug</label>
+        <div className="flex items-center gap-1 bg-muted/20 border border-border rounded-lg px-3 py-2 focus-within:border-primary transition-colors">
+          <span className="text-sm text-muted-foreground select-none">{host}/q/</span>
           <input
             type="text"
             required
             value={slug}
             onChange={handleSlugChange}
             placeholder="acme-coffee"
-            className="flex-1 bg-transparent text-sm text-white placeholder-zinc-700 focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none"
           />
         </div>
-        <p className="text-[10px] text-zinc-500 mt-1">This forms the public QR code join link</p>
+        <p className="text-[10px] text-muted-foreground mt-1 font-medium">This forms the public QR code join link</p>
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-white hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 text-black text-sm font-semibold py-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+        className="w-full bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground text-xs font-bold py-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
       >
         {loading ? (
           <>
-            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-black" />
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
             Creating...
           </>
         ) : (

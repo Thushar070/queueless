@@ -58,7 +58,7 @@ export default function StaffPage() {
       router.push("/login");
     } else if (status === "authenticated") {
       if (session?.user?.role !== "BUSINESS_OWNER") {
-        // Rendered inline permission denied or handled below
+        // Handled below
       } else {
         fetchStaff();
       }
@@ -67,27 +67,27 @@ export default function StaffPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (session?.user?.role !== "BUSINESS_OWNER") {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
-        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 max-w-md w-full shadow-2xl relative z-10 space-y-6">
-          <svg className="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f2_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f2_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-70 pointer-events-none" />
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-xl relative z-10 space-y-6">
+          <svg className="w-12 h-12 text-destructive mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold tracking-tight text-white">Access Denied</h2>
-            <p className="text-sm text-zinc-400">Only Business Owners are authorized to manage staff accounts.</p>
+            <h2 className="text-xl font-heading font-extrabold text-foreground">Access Denied</h2>
+            <p className="text-sm text-muted-foreground font-medium">Only Business Owners are authorized to manage staff accounts.</p>
           </div>
           <Link
             href="/dashboard"
-            className="inline-block text-xs bg-white text-black font-bold px-6 py-2.5 rounded-lg transition-colors cursor-pointer"
+            className="inline-block text-xs bg-primary hover:bg-primary/95 text-primary-foreground font-bold px-6 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
           >
             Back to Dashboard
           </Link>
@@ -146,191 +146,150 @@ export default function StaffPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
-      {/* Grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
+    <div className="space-y-8 select-none text-left">
+      <div>
+        <h2 className="text-3xl font-heading font-extrabold tracking-tight text-foreground font-heading">Staff Management</h2>
+        <p className="text-muted-foreground text-sm mt-1 font-medium">Add, manage roles, and delete staff credentials for your business.</p>
+      </div>
 
-      {/* Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold text-white tracking-tight">
-            QueueLess
-          </Link>
-          <nav className="hidden md:flex gap-4">
-            <Link href="/dashboard/queues" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Queues
-            </Link>
-            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              QR Codes
-            </Link>
-            <Link href="/dashboard/analytics" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Analytics
-            </Link>
-            <Link href="/dashboard/audit-logs" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Audit Logs
-            </Link>
-            <Link href="/dashboard/staff" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
-              Staff
-            </Link>
-            <Link href="/dashboard/settings" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Settings
-            </Link>
-          </nav>
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="font-semibold">{error}</span>
         </div>
-        <Link
-          href="/dashboard"
-          className="text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg px-3 py-1.5 transition-colors"
-        >
-          Back to Overview
-        </Link>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-8 z-10">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Staff Management</h2>
-          <p className="text-zinc-400 text-sm mt-1">Add, manage roles, and delete staff credentials for your business.</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Temporary password display */}
-        {successData && (
-          <div className="bg-zinc-950 border border-white/20 rounded-xl p-6 space-y-3 text-left">
-            <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500 animate-ping" />
-              Staff Member Account Created
-            </h3>
-            <p className="text-xs text-zinc-400">
-              Please share the temporary password below with <span className="font-semibold text-white">{successData.email}</span>. They will be forced to change it on their first login.
-            </p>
-            <div className="bg-black border border-zinc-900 rounded-lg p-3 flex items-center justify-between">
-              <span className="font-mono text-sm tracking-wider text-green-400 font-bold select-all">
-                {successData.tempPass}
-              </span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(successData.tempPass);
-                  alert("Copied to clipboard!");
-                }}
-                className="text-[10px] bg-zinc-900 border border-zinc-800 hover:text-white px-3 py-1.5 rounded-md text-zinc-400 transition-colors"
-              >
-                Copy
-              </button>
-            </div>
+      {/* Temporary password display */}
+      {successData && (
+        <div className="bg-card border border-border rounded-xl p-6 space-y-3 text-left shadow-sm">
+          <h3 className="text-sm font-heading font-extrabold text-foreground flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+            Staff Member Account Created
+          </h3>
+          <p className="text-xs text-muted-foreground font-semibold">
+            Please share the temporary password below with <span className="font-bold text-foreground">{successData.email}</span>. They will be forced to change it on their first login.
+          </p>
+          <div className="bg-muted/30 border border-border rounded-lg p-3 flex items-center justify-between">
+            <span className="font-mono text-sm tracking-wider text-emerald-600 font-bold select-all">
+              {successData.tempPass}
+            </span>
             <button
-              onClick={() => setSuccessData(null)}
-              className="text-[10px] text-zinc-500 hover:text-zinc-300 underline block"
+              onClick={() => {
+                navigator.clipboard.writeText(successData.tempPass);
+                alert("Copied to clipboard!");
+              }}
+              className="text-[10px] bg-white border border-border hover:bg-muted px-3 py-1.5 rounded-md text-foreground transition-colors font-bold shadow-sm"
             >
-              Dismiss
+              Copy
             </button>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Create Form */}
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 space-y-6 h-fit">
-            <h3 className="text-lg font-bold text-white">Create Staff Account</h3>
-            <form onSubmit={handleCreate} className="space-y-4 text-left">
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
-                  className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-zinc-800 transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john.doe@company.com"
-                  className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-zinc-800 transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Assigned Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-800 transition-colors"
-                >
-                  <option value="STAFF">Staff (Queue Management Only)</option>
-                  <option value="BUSINESS_OWNER">Business Owner (Full Settings Access)</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-white hover:bg-zinc-200 text-black font-semibold text-xs py-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-black" />
-                ) : (
-                  "Generate Credentials"
-                )}
-              </button>
-            </form>
-          </div>
-
-          {/* Staff List */}
-          <div className="lg:col-span-2 bg-zinc-950 border border-zinc-900 rounded-2xl p-6 space-y-6">
-            <h3 className="text-lg font-bold text-white text-left">Active Members</h3>
-
-            {loading ? (
-              <div className="py-12 flex justify-center items-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-white" />
-              </div>
-            ) : staffList.length === 0 ? (
-              <p className="text-sm text-zinc-500 py-12">No active staff members found.</p>
-            ) : (
-              <div className="divide-y divide-zinc-900">
-                {staffList.map((member) => (
-                  <div key={member.id} className="py-4 flex items-center justify-between text-left">
-                    <div>
-                      <h4 className="text-sm font-bold text-white">{member.name}</h4>
-                      <p className="text-xs text-zinc-400 mt-0.5">{member.email}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-300 font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          {member.role.replace("_", " ")}
-                        </span>
-                        <span className="text-[10px] text-zinc-650">
-                          Joined {new Date(member.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {member.id !== session?.user?.id && (
-                      <button
-                        onClick={() => handleDelete(member.id)}
-                        className="text-xs border border-zinc-900 hover:border-red-900/50 hover:bg-red-950/20 text-zinc-450 hover:text-red-400 px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setSuccessData(null)}
+            className="text-[10px] text-muted-foreground hover:text-foreground underline block"
+          >
+            Dismiss
+          </button>
         </div>
-      </main>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Create Form */}
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-6 h-fit shadow-sm">
+          <h3 className="text-lg font-heading font-extrabold text-foreground">Create Staff Account</h3>
+          <form onSubmit={handleCreate} className="space-y-4 text-left">
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Full Name</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+                className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Email Address</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="john.doe@company.com"
+                className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Assigned Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as any)}
+                className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+              >
+                <option value="STAFF">Staff (Queue Management Only)</option>
+                <option value="BUSINESS_OWNER">Business Owner (Full Settings Access)</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs py-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            >
+              {isSubmitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                "Generate Credentials"
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Staff List */}
+        <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
+          <h3 className="text-lg font-heading font-extrabold text-foreground text-left font-heading">Active Members</h3>
+
+          {loading ? (
+            <div className="py-12 flex justify-center items-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+            </div>
+          ) : staffList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-12 font-medium">No active staff members found.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              {staffList.map((member) => (
+                <div key={member.id} className="py-4 flex items-center justify-between text-left">
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">{member.name}</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">{member.email}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[9px] bg-muted border border-border text-muted-foreground font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        {member.role.replace("_", " ")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        Joined {new Date(member.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {member.id !== session?.user?.id && (
+                    <button
+                      onClick={() => handleDelete(member.id)}
+                      className="text-xs bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

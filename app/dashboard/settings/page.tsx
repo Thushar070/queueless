@@ -44,7 +44,7 @@ export default function SettingsPage() {
       router.push("/login");
     } else if (status === "authenticated") {
       if (session?.user?.role !== "BUSINESS_OWNER") {
-        // Handled via Access Denied rendering below
+        // Handled below
       } else {
         fetchSettings();
       }
@@ -53,27 +53,27 @@ export default function SettingsPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (session?.user?.role !== "BUSINESS_OWNER") {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
-        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 max-w-md w-full shadow-2xl relative z-10 space-y-6">
-          <svg className="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center select-none relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f2_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f2_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-70 pointer-events-none" />
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full shadow-xl relative z-10 space-y-6">
+          <svg className="w-12 h-12 text-destructive mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold tracking-tight text-white">Access Denied</h2>
-            <p className="text-sm text-zinc-400">Only Business Owners are authorized to modify business settings.</p>
+            <h2 className="text-xl font-heading font-extrabold text-white">Access Denied</h2>
+            <p className="text-sm text-muted-foreground font-medium">Only Business Owners are authorized to modify business settings.</p>
           </div>
           <Link
             href="/dashboard"
-            className="inline-block text-xs bg-white text-black font-bold px-6 py-2.5 rounded-lg transition-colors cursor-pointer"
+            className="inline-block text-xs bg-primary hover:bg-primary/95 text-primary-foreground font-bold px-6 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
           >
             Back to Dashboard
           </Link>
@@ -124,143 +124,102 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
-      {/* Grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
+    <div className="space-y-8 select-none text-left">
+      <div>
+        <h2 className="text-3xl font-heading font-extrabold tracking-tight text-foreground font-heading">Business Settings</h2>
+        <p className="text-muted-foreground text-sm mt-1 font-medium">Configure profile details and default working hours for your business.</p>
+      </div>
 
-      {/* Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold text-white tracking-tight">
-            QueueLess
-          </Link>
-          <nav className="hidden md:flex gap-4">
-            <Link href="/dashboard/queues" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Queues
-            </Link>
-            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              QR Codes
-            </Link>
-            <Link href="/dashboard/analytics" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Analytics
-            </Link>
-            <Link href="/dashboard/audit-logs" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Audit Logs
-            </Link>
-            <Link href="/dashboard/staff" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Staff
-            </Link>
-            <Link href="/dashboard/settings" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
-              Settings
-            </Link>
-          </nav>
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="font-semibold">{error}</span>
         </div>
-        <Link
-          href="/dashboard"
-          className="text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg px-3 py-1.5 transition-colors"
-        >
-          Back to Overview
-        </Link>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 max-w-4xl mx-auto w-full space-y-8 z-10">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Business Settings</h2>
-          <p className="text-zinc-400 text-sm mt-1">Configure profile details and default working hours for your business.</p>
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-500/20 text-emerald-700 text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left font-semibold">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Business settings updated successfully.</span>
         </div>
+      )}
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
+      {loading ? (
+        <div className="py-12 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+        </div>
+      ) : (
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-2xl mx-auto shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-6 text-left">
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Business Name</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Acme Inc."
+                className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
 
-        {success && (
-          <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Business settings updated successfully.</span>
-          </div>
-        )}
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Contact Phone (Optional)</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+15550199000"
+                className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
 
-        {loading ? (
-          <div className="py-12 flex justify-center items-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-white" />
-          </div>
-        ) : (
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 max-w-2xl mx-auto shadow-xl">
-            <form onSubmit={handleSubmit} className="space-y-6 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Business Name</label>
+                <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Default Opening Hours (HH:MM)</label>
                 <input
                   type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Acme Inc."
-                  className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-zinc-800 transition-colors"
+                  value={workingHoursStart}
+                  onChange={(e) => setWorkingHoursStart(e.target.value)}
+                  placeholder="09:00"
+                  className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Contact Phone (Optional)</label>
+                <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Default Closing Hours (HH:MM)</label>
                 <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+15550199000"
-                  className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-zinc-800 transition-colors"
+                  type="text"
+                  value={workingHoursEnd}
+                  onChange={(e) => setWorkingHoursEnd(e.target.value)}
+                  placeholder="17:00"
+                  className="w-full bg-muted/20 border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Default Opening Hours (HH:MM)</label>
-                  <input
-                    type="text"
-                    value={workingHoursStart}
-                    onChange={(e) => setWorkingHoursStart(e.target.value)}
-                    placeholder="09:00"
-                    className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-zinc-800 transition-colors"
-                  />
-                </div>
+            <p className="text-[10px] text-muted-foreground font-medium">
+              Opening and closing times must use 24-hour format (e.g. 08:30 and 18:00). These business-level defaults apply to all queues unless overridden on a specific queue.
+            </p>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Default Closing Hours (HH:MM)</label>
-                  <input
-                    type="text"
-                    value={workingHoursEnd}
-                    onChange={(e) => setWorkingHoursEnd(e.target.value)}
-                    placeholder="17:00"
-                    className="w-full bg-black border border-zinc-900 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-zinc-800 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <p className="text-[10px] text-zinc-500">
-                Opening and closing times must use 24-hour format (e.g. 08:30 and 18:00). These business-level defaults apply to all queues unless overridden on a specific queue.
-              </p>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-white hover:bg-zinc-200 text-black font-semibold text-xs py-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-black" />
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-            </form>
-          </div>
-        )}
-      </main>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs py-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            >
+              {isSubmitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                "Save Changes"
+              )}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

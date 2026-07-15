@@ -203,179 +203,140 @@ export default function QueuesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
-      {/* Grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
-
-      {/* Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold text-white tracking-tight">
-            QueueLess
-          </Link>
-          <nav className="hidden md:flex gap-4">
-            <Link href="/dashboard/queues" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
-              Queues
-            </Link>
-            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              QR Codes
-            </Link>
-            <Link href="/dashboard/analytics" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Analytics
-            </Link>
-            <Link href="/dashboard/audit-logs" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Audit Logs
-            </Link>
-            {session?.user?.role === "BUSINESS_OWNER" && (
-              <>
-                <Link href="/dashboard/staff" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-                  Staff
-                </Link>
-                <Link href="/dashboard/settings" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-                  Settings
-                </Link>
-              </>
-            )}
-          </nav>
+    <div className="space-y-8 select-none">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="text-left">
+          <h2 className="text-3xl font-heading font-extrabold tracking-tight text-foreground font-heading">Manage Queues</h2>
+          <p className="text-muted-foreground text-sm mt-1 font-medium">Create, configure, and monitor your customer waiting lines</p>
         </div>
-        <Link
-          href="/dashboard"
-          className="text-xs text-zinc-400 hover:text-white border border-zinc-800 rounded-lg px-3 py-1.5 transition-colors"
+        <button
+          onClick={() => {
+            reset();
+            setIsCreateOpen(true);
+          }}
+          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs px-5 py-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
         >
-          Back to Overview
-        </Link>
-      </header>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          Create Queue
+        </button>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-white">Manage Queues</h2>
-            <p className="text-zinc-400 text-sm mt-1">Create, configure, and monitor your customer waiting lines</p>
-          </div>
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span className="font-semibold">{error}</span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      ) : queues.length === 0 ? (
+        <div className="text-center py-20 bg-card border border-border rounded-2xl p-8">
+          <svg className="w-12 h-12 mx-auto text-muted-foreground mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <h3 className="text-lg font-bold text-foreground">No queues active</h3>
+          <p className="text-muted-foreground text-sm mt-1 mb-6">Create your first virtual queue to start serving walk-in customers.</p>
           <button
-            onClick={() => {
-              reset();
-              setIsCreateOpen(true);
-            }}
-            className="bg-white hover:bg-zinc-200 text-black font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold text-xs px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-            Create Queue
+            Configure First Queue
           </button>
         </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2 text-left">
-            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
-          </div>
-        ) : queues.length === 0 ? (
-          <div className="text-center py-20 bg-zinc-950 border border-zinc-900 rounded-2xl p-8">
-            <svg className="w-12 h-12 mx-auto text-zinc-650 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <h3 className="text-lg font-bold text-zinc-300">No queues active</h3>
-            <p className="text-zinc-500 text-sm mt-1 mb-6">Create your first virtual queue to start serving walk-in customers.</p>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-800 font-semibold text-xs px-4 py-2 rounded-lg transition-colors cursor-pointer"
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {queues.map((queue) => (
+            <div
+              key={queue.id}
+              className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
             >
-              Configure First Queue
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {queues.map((queue) => (
-              <div
-                key={queue.id}
-                className="bg-zinc-950 border border-zinc-900 rounded-xl p-6 relative overflow-hidden transition-all hover:-translate-y-0.5 shadow-md flex flex-col justify-between"
-              >
-                {/* Upper Details */}
-                <div>
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-100">{queue.name}</h3>
-                      <p className="text-xs text-slate-500 font-mono mt-0.5">/q/{queue.slug}</p>
-                    </div>
-                    {/* Status Badge */}
-                    <button
-                      onClick={() => toggleStatus(queue.id)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border cursor-pointer select-none transition-all ${
-                        queue.status === "OPEN"
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
-                          : "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${queue.status === "OPEN" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-                      {queue.status}
-                    </button>
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-4">
+                  <div className="text-left">
+                    <h3 className="font-heading font-extrabold text-lg text-foreground truncate max-w-[150px]" title={queue.name}>
+                      {queue.name}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">/q/{queue.slug}</p>
                   </div>
-
-                  <div className="space-y-2 mt-4 text-sm text-slate-400">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Service Time:</span>
-                      <span className="font-medium text-slate-200">{queue.avgServiceTimeMin} min / person</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Max Capacity:</span>
-                      <span className="font-medium text-slate-200">
-                        {queue.maxCapacity !== null ? `${queue.maxCapacity} people` : "Unlimited"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Hours:</span>
-                      <span className="font-medium text-slate-200">
-                        {queue.workingHoursStart && queue.workingHoursEnd
-                          ? `${queue.workingHoursStart} - ${queue.workingHoursEnd}`
-                          : "No restrictions"}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Status Badge */}
+                  <button
+                    onClick={() => toggleStatus(queue.id)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border cursor-pointer select-none transition-all ${
+                      queue.status === "OPEN"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-500/20 hover:bg-emerald-100"
+                        : "bg-amber-50 text-amber-700 border-amber-500/20 hover:bg-amber-100"
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${queue.status === "OPEN" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                    {queue.status}
+                  </button>
                 </div>
 
-                {/* Card Action footer */}
-                <div className="flex gap-2 mt-6 border-t border-slate-800/60 pt-4 relative z-10">
-                  <button
-                    onClick={() => startEdit(queue)}
-                    className="flex-1 text-center bg-slate-950 hover:bg-slate-900 border border-slate-800 text-xs font-medium py-2 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Edit Settings
-                  </button>
-                  <button
-                    onClick={() => deleteQueue(queue.id)}
-                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 p-2 rounded-lg transition-colors cursor-pointer"
-                    title="Delete Queue"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                <div className="space-y-2 mt-4 text-xs font-medium text-muted-foreground text-left">
+                  <div className="flex justify-between">
+                    <span>Service Time:</span>
+                    <span className="font-bold text-foreground">{queue.avgServiceTimeMin} min / person</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Max Capacity:</span>
+                    <span className="font-bold text-foreground">
+                      {queue.maxCapacity !== null ? `${queue.maxCapacity} people` : "Unlimited"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Hours:</span>
+                    <span className="font-bold text-foreground">
+                      {queue.workingHoursStart && queue.workingHoursEnd
+                        ? `${queue.workingHoursStart} - ${queue.workingHoursEnd}`
+                        : "No restrictions"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </main>
 
-      {/* Overlay Modal for Create / Edit */}
+              {/* Card actions */}
+              <div className="flex gap-2 mt-6 border-t border-border pt-4 relative z-10">
+                <Link
+                  href={`/dashboard/queues/${queue.id}`}
+                  className="flex-1 text-center bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-sm"
+                >
+                  Manage Live
+                </Link>
+                <button
+                  onClick={() => startEdit(queue)}
+                  className="bg-white hover:bg-muted border border-border text-foreground text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteQueue(queue.id)}
+                  className="bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 p-2 rounded-lg transition-colors cursor-pointer"
+                  title="Delete Queue"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Overlay Modal for Create / Edit */}
       {(isCreateOpen || editingQueue !== null) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 shadow-2xl space-y-6 relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">
+              <h3 className="text-lg font-heading font-extrabold text-foreground">
                 {editingQueue ? "Edit Queue Configuration" : "Create New Virtual Queue"}
               </h3>
               <button
@@ -384,7 +345,7 @@ export default function QueuesPage() {
                   setEditingQueue(null);
                   reset();
                 }}
-                className="text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -397,7 +358,7 @@ export default function QueuesPage() {
               className="space-y-4 text-left"
             >
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="name">
+                <label className="block text-xs font-bold text-foreground mb-1.5" htmlFor="name">
                   Queue Name
                 </label>
                 <input
@@ -406,13 +367,13 @@ export default function QueuesPage() {
                   required
                   placeholder="Checkup Queue"
                   {...register("name")}
-                  className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                  className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                 />
-                {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
+                {errors.name && <p className="text-destructive text-xs mt-1">{errors.name.message}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="avgServiceTimeMin">
+                <label className="block text-xs font-bold text-foreground mb-1.5" htmlFor="avgServiceTimeMin">
                   Average Service Duration (Minutes per customer)
                 </label>
                 <input
@@ -421,15 +382,15 @@ export default function QueuesPage() {
                   required
                   placeholder="8"
                   {...register("avgServiceTimeMin", { valueAsNumber: true })}
-                  className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                  className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                 />
                 {errors.avgServiceTimeMin && (
-                  <p className="text-red-400 text-xs mt-1">{errors.avgServiceTimeMin.message}</p>
+                  <p className="text-destructive text-xs mt-1">{errors.avgServiceTimeMin.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="maxCapacity">
+                <label className="block text-xs font-bold text-foreground mb-1.5" htmlFor="maxCapacity">
                   Max Capacity / Capacity Limit (Optional)
                 </label>
                 <input
@@ -439,16 +400,16 @@ export default function QueuesPage() {
                   {...register("maxCapacity", {
                     setValueAs: (val) => (val === "" ? null : parseInt(val, 10)),
                   })}
-                  className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                  className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                 />
                 {errors.maxCapacity && (
-                  <p className="text-red-400 text-xs mt-1">{errors.maxCapacity.message}</p>
+                  <p className="text-destructive text-xs mt-1">{errors.maxCapacity.message}</p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="workingHoursStart">
+                  <label className="block text-xs font-bold text-foreground mb-1.5" htmlFor="workingHoursStart">
                     Working Hours Start (HH:MM)
                   </label>
                   <input
@@ -458,15 +419,15 @@ export default function QueuesPage() {
                     {...register("workingHoursStart", {
                       setValueAs: (val) => (val === "" ? null : val),
                     })}
-                    className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                   />
                   {errors.workingHoursStart && (
-                    <p className="text-red-400 text-xs mt-1">{errors.workingHoursStart.message}</p>
+                    <p className="text-destructive text-xs mt-1">{errors.workingHoursStart.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1" htmlFor="workingHoursEnd">
+                  <label className="block text-xs font-bold text-foreground mb-1.5" htmlFor="workingHoursEnd">
                     Working Hours End (HH:MM)
                   </label>
                   <input
@@ -476,10 +437,10 @@ export default function QueuesPage() {
                     {...register("workingHoursEnd", {
                       setValueAs: (val) => (val === "" ? null : val),
                     })}
-                    className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                   />
                   {errors.workingHoursEnd && (
-                    <p className="text-red-400 text-xs mt-1">{errors.workingHoursEnd.message}</p>
+                    <p className="text-destructive text-xs mt-1">{errors.workingHoursEnd.message}</p>
                   )}
                 </div>
               </div>
@@ -487,7 +448,7 @@ export default function QueuesPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-white hover:bg-zinc-200 disabled:bg-zinc-850 disabled:text-zinc-650 text-black text-sm font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
+                className="w-full bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground text-xs font-bold py-3 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 {isSubmitting
                   ? "Saving Changes..."

@@ -1,9 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 interface AuditLog {
   id: string;
@@ -57,7 +57,6 @@ export default function AdminAuditLogsPage() {
 
   async function fetchBusinesses() {
     try {
-      await Promise.resolve();
       const res = await fetch("/api/admin/businesses?limit=100");
       if (res.ok) {
         const data = await res.json();
@@ -70,7 +69,6 @@ export default function AdminAuditLogsPage() {
 
   async function fetchLogs(page = 1) {
     try {
-      await Promise.resolve();
       setLoading(true);
       setError(null);
 
@@ -106,7 +104,6 @@ export default function AdminAuditLogsPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchBusinesses();
       fetchLogs(1);
     }
@@ -130,270 +127,235 @@ export default function AdminAuditLogsPage() {
 
   if (status === "loading" || (loading && logs.length === 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white" />
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden select-none">
-      {/* Grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-25 pointer-events-none" />
+    <div className="space-y-6 select-none text-left">
+      <div>
+        <h1 className="text-2xl font-heading font-extrabold text-foreground tracking-tight">Platform Audit Logs</h1>
+        <p className="text-xs text-muted-foreground mt-1 font-semibold">Platform-wide security events and system actions — Total events found: {total}</p>
+      </div>
 
-      {/* Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-6">
-          <Link href="/admin" className="text-xl font-bold text-white tracking-tight">
-            QueueLess Admin
-          </Link>
-          <nav className="hidden md:flex gap-4">
-            <Link href="/admin" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Overview
-            </Link>
-            <Link href="/admin/businesses" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Businesses
-            </Link>
-            <Link href="/admin/analytics" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
-              Analytics
-            </Link>
-            <Link href="/admin/audit-logs" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
-              Audit Logs
-            </Link>
-          </nav>
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl p-4 font-semibold">
+          {error}
         </div>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-xs bg-zinc-950 border border-zinc-850 text-zinc-300 font-semibold px-4 py-2 rounded-lg hover:text-white transition-colors cursor-pointer"
-        >
-          Sign Out
-        </button>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-6 z-10">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Platform Audit Logs</h1>
-          <p className="text-xs text-zinc-400 mt-1">Platform-wide security events and system actions — Total events found: {total}</p>
+      {/* Filter panel */}
+      <form onSubmit={handleFilterSubmit} className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4 text-foreground">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Business Dropdown filter */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Scope by Business</label>
+            <select
+              value={targetBusinessId}
+              onChange={(e) => setTargetBusinessId(e.target.value)}
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+            >
+              <option value="">All Businesses / Platform Actions</option>
+              {businesses.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date Range filters */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">End Date</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+            />
+          </div>
         </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl p-4">
-            {error}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Actor ID filter */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Actor ID</label>
+            <input
+              type="text"
+              value={actorId}
+              onChange={(e) => setActorId(e.target.value)}
+              placeholder="Staff or Admin ID"
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+            />
+          </div>
+
+          {/* Action Type filter */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Action Type</label>
+            <select
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+            >
+              <option value="">All Actions</option>
+              <option value="STAFF_CREATED">STAFF_CREATED</option>
+              <option value="STAFF_REMOVED">STAFF_REMOVED</option>
+              <option value="BUSINESS_SETTINGS_UPDATED">BUSINESS_SETTINGS_UPDATED</option>
+              <option value="BUSINESS_SUSPENDED">BUSINESS_SUSPENDED</option>
+              <option value="BUSINESS_REACTIVATED">BUSINESS_REACTIVATED</option>
+              <option value="BUSINESS_DELETED">BUSINESS_DELETED</option>
+            </select>
+          </div>
+
+          {/* Target Type filter */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-foreground font-bold uppercase tracking-wider block">Target Type</label>
+            <select
+              value={targetType}
+              onChange={(e) => setTargetType(e.target.value)}
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+            >
+              <option value="">All Target Types</option>
+              <option value="Business">Business</option>
+              <option value="Staff">Staff</option>
+              <option value="Queue">Queue</option>
+              <option value="QueueEntry">QueueEntry</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="text-xs bg-white border border-border hover:bg-muted text-foreground font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+          >
+            Reset Filters
+          </button>
+          <button
+            type="submit"
+            className="text-xs bg-primary hover:bg-primary/95 text-primary-foreground font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </form>
+
+      {/* Logs Table */}
+      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden text-foreground">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-bold tracking-wider bg-muted/20">
+                <th className="px-6 py-4">Timestamp</th>
+                <th className="px-6 py-4">Actor</th>
+                <th className="px-6 py-4">Action</th>
+                <th className="px-6 py-4">Target Type</th>
+                <th className="px-6 py-4">Target ID</th>
+                <th className="px-6 py-4 text-right">Details</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border text-sm">
+              {logs.map((log) => (
+                <tr key={log.id} className="hover:bg-muted/10 transition-colors border-b border-border">
+                  <td className="px-6 py-4 text-muted-foreground font-mono text-xs whitespace-nowrap">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="font-bold text-foreground block">{log.actorName}</span>
+                    <span className="text-xs text-muted-foreground font-semibold">{log.actorEmail}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex bg-muted border border-border px-2 py-1 rounded text-xs font-mono font-bold text-foreground">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-foreground font-semibold">{log.targetType}</td>
+                  <td className="px-6 py-4 text-muted-foreground font-mono text-xs truncate max-w-[120px]">
+                    {log.targetId}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => setSelectedLog(log)}
+                      className="text-xs bg-white hover:bg-muted border border-border text-foreground px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
+                    >
+                      Inspect
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {logs.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-muted-foreground text-xs font-medium">
+                    No matching audit logs found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Footer */}
+        {pages > 1 && (
+          <div className="border-t border-border px-6 py-4 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-semibold">
+              Page {currentPage} of {pages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => fetchLogs(currentPage - 1)}
+                className="text-xs bg-white border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
+              >
+                Previous
+              </button>
+              <button
+                disabled={currentPage === pages}
+                onClick={() => fetchLogs(currentPage + 1)}
+                className="text-xs bg-white border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
-
-        {/* Filter panel */}
-        <form onSubmit={handleFilterSubmit} className="bg-zinc-950 border border-zinc-900 rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Business Dropdown filter */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-450 font-bold uppercase tracking-wider block">Scope by Business</label>
-              <select
-                value={targetBusinessId}
-                onChange={(e) => setTargetBusinessId(e.target.value)}
-                className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 transition-colors"
-              >
-                <option value="">All Businesses / Platform Actions</option>
-                {businesses.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Date Range filters */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-450 font-bold uppercase tracking-wider block">Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 transition-colors"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-450 font-bold uppercase tracking-wider block">End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 transition-colors"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Actor ID filter */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-450 font-bold uppercase tracking-wider block">Actor ID</label>
-              <input
-                type="text"
-                value={actorId}
-                onChange={(e) => setActorId(e.target.value)}
-                placeholder="Staff or Admin ID"
-                className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 transition-colors"
-              />
-            </div>
-
-            {/* Action Type filter */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-450 font-bold uppercase tracking-wider block">Action Type</label>
-              <select
-                value={action}
-                onChange={(e) => setAction(e.target.value)}
-                className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 transition-colors"
-              >
-                <option value="">All Actions</option>
-                <option value="STAFF_CREATED">STAFF_CREATED</option>
-                <option value="STAFF_REMOVED">STAFF_REMOVED</option>
-                <option value="BUSINESS_SETTINGS_UPDATED">BUSINESS_SETTINGS_UPDATED</option>
-                <option value="BUSINESS_SUSPENDED">BUSINESS_SUSPENDED</option>
-                <option value="BUSINESS_REACTIVATED">BUSINESS_REACTIVATED</option>
-                <option value="BUSINESS_DELETED">BUSINESS_DELETED</option>
-              </select>
-            </div>
-
-            {/* Target Type filter */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-zinc-450 font-bold uppercase tracking-wider block">Target Type</label>
-              <select
-                value={targetType}
-                onChange={(e) => setTargetType(e.target.value)}
-                className="w-full bg-black border border-zinc-900 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-750 transition-colors"
-              >
-                <option value="">All Target Types</option>
-                <option value="Business">Business</option>
-                <option value="Staff">Staff</option>
-                <option value="Queue">Queue</option>
-                <option value="QueueEntry">QueueEntry</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 font-semibold px-4 py-2 rounded-lg hover:text-white transition-colors cursor-pointer"
-            >
-              Reset Filters
-            </button>
-            <button
-              type="submit"
-              className="text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-zinc-200 transition-colors cursor-pointer"
-            >
-              Apply Filters
-            </button>
-          </div>
-        </form>
-
-        {/* Logs Table */}
-        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl shadow-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-900 text-zinc-450 text-[10px] uppercase font-bold tracking-wider">
-                  <th className="px-6 py-4">Timestamp</th>
-                  <th className="px-6 py-4">Actor</th>
-                  <th className="px-6 py-4">Action</th>
-                  <th className="px-6 py-4">Target Type</th>
-                  <th className="px-6 py-4">Target ID</th>
-                  <th className="px-6 py-4 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-900 text-sm">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-zinc-950/40 transition-colors">
-                    <td className="px-6 py-4 text-zinc-300 font-mono text-xs whitespace-nowrap">
-                      {new Date(log.createdAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="font-bold text-white block">{log.actorName}</span>
-                      <span className="text-xs text-zinc-450">{log.actorEmail}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex bg-zinc-900 border border-zinc-850 px-2 py-1 rounded text-xs font-mono font-semibold text-zinc-250">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-zinc-300">{log.targetType}</td>
-                    <td className="px-6 py-4 text-zinc-450 font-mono text-xs truncate max-w-[120px]">
-                      {log.targetId}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setSelectedLog(log)}
-                        className="text-xs border border-zinc-850 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {logs.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-zinc-550 text-xs">
-                      No matching audit logs found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Footer */}
-          {pages > 1 && (
-            <div className="border-t border-zinc-900 px-6 py-4 flex items-center justify-between">
-              <span className="text-xs text-zinc-450">
-                Page {currentPage} of {pages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => fetchLogs(currentPage - 1)}
-                  className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  Previous
-                </button>
-                <button
-                  disabled={currentPage === pages}
-                  onClick={() => fetchLogs(currentPage + 1)}
-                  className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
+      </div>
 
       {/* Metadata Inspector Drawer */}
       {selectedLog && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-zinc-900 rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl relative">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-2xl relative text-left">
             <div>
-              <h3 className="text-lg font-bold text-white">Log Event Metadata</h3>
-              <p className="text-xs text-zinc-450 mt-0.5">Payload details and action context parameters</p>
+              <h3 className="text-lg font-heading font-extrabold text-foreground">Log Event Metadata</h3>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">Payload details and action context parameters</p>
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-2 gap-4 text-xs text-foreground font-semibold">
                 <div>
-                  <span className="text-zinc-550 block font-semibold uppercase tracking-wider text-[10px]">Log Event ID</span>
-                  <span className="text-zinc-200 font-mono">{selectedLog.id}</span>
+                  <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px]">Log Event ID</span>
+                  <span className="font-mono">{selectedLog.id}</span>
                 </div>
                 <div>
-                  <span className="text-zinc-550 block font-semibold uppercase tracking-wider text-[10px]">Business ID</span>
-                  <span className="text-zinc-200 font-mono">{selectedLog.businessId || "Platform level"}</span>
+                  <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px]">Business ID</span>
+                  <span className="font-mono">{selectedLog.businessId || "Platform level"}</span>
                 </div>
               </div>
 
-              <div className="bg-black border border-zinc-900 rounded-xl p-4 space-y-2">
-                <span className="text-zinc-550 block font-semibold uppercase tracking-wider text-[10px]">JSON Payload</span>
-                <pre className="text-xs text-zinc-300 overflow-x-auto whitespace-pre-wrap font-mono max-h-48 leading-relaxed">
+              <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-2">
+                <span className="text-muted-foreground block font-bold uppercase tracking-wider text-[10px]">JSON Payload</span>
+                <pre className="text-xs text-foreground overflow-x-auto whitespace-pre-wrap font-mono max-h-48 leading-relaxed">
                   {JSON.stringify(selectedLog.metadata, null, 2)}
                 </pre>
               </div>
@@ -402,7 +364,7 @@ export default function AdminAuditLogsPage() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-xs bg-white text-black font-semibold px-4 py-2 rounded-lg hover:bg-zinc-200 transition-colors cursor-pointer"
+                className="text-xs bg-primary hover:bg-primary/95 text-primary-foreground font-bold px-5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 Close
               </button>

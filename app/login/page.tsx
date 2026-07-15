@@ -43,36 +43,36 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4 relative overflow-hidden select-none">
-      {/* Dark minimalist grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35" />
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4 relative overflow-hidden select-none">
+      {/* Light grid background pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f2_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f2_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-70 pointer-events-none" />
 
-      <div className="w-full max-w-md bg-zinc-950 border border-zinc-800/80 rounded-2xl shadow-2xl p-8 relative z-10 space-y-6">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl p-8 relative z-10 space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          <span className="text-2xl font-heading font-extrabold tracking-tight text-foreground block">
             QueueLess
-          </h1>
-          <p className="text-zinc-400 mt-1 text-xs">
+          </span>
+          <p className="text-muted-foreground mt-1 text-xs font-medium">
             Sign in to manage your virtual queues
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-lg flex items-center gap-2">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs px-4 py-3 rounded-lg flex items-center gap-2">
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span>{error}</span>
+            <span className="font-semibold">{error}</span>
           </div>
         )}
 
-        {/* Google Login is prominent at the top */}
+        {/* Google Login button */}
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="w-full bg-white hover:bg-zinc-200 text-black text-sm font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full bg-white hover:bg-muted text-foreground border border-border text-xs font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
               fill="currentColor"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -93,16 +93,16 @@ export default function LoginPage() {
           <span>Continue with Google</span>
         </button>
 
-        <div className="relative flex items-center py-1">
-          <div className="flex-grow border-t border-zinc-800"></div>
-          <span className="flex-shrink mx-4 text-zinc-500 text-[10px] uppercase tracking-wider">Or Credentials</span>
-          <div className="flex-grow border-t border-zinc-800"></div>
+        <div className="relative flex items-center py-1 select-none">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink mx-4 text-muted-foreground text-[10px] uppercase font-bold tracking-wider">Or Credentials</span>
+          <div className="flex-grow border-t border-border"></div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div className="space-y-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-300" htmlFor="email">
+              <label className="text-xs font-bold text-foreground" htmlFor="email">
                 Email Address
               </label>
               <input
@@ -112,12 +112,12 @@ export default function LoginPage() {
                 placeholder="jane@acme.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-zinc-300" htmlFor="password">
+              <label className="text-xs font-bold text-foreground" htmlFor="password">
                 Password
               </label>
               <input
@@ -127,7 +127,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black border border-zinc-850 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-500 transition-colors"
+                className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
               />
             </div>
           </div>
@@ -135,14 +135,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
+            className="w-full bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold py-3 rounded-lg transition-colors cursor-pointer shadow-sm"
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>
 
-          <div className="text-center mt-4">
-            <span className="text-xs text-zinc-500">Need an account? </span>
-            <Link href="/signup" className="text-xs text-zinc-300 hover:text-white font-semibold transition-colors">
+          <div className="text-center mt-4 pt-2 border-t border-border">
+            <span className="text-xs text-muted-foreground">Need an account? </span>
+            <Link href="/signup" className="text-xs text-foreground font-bold hover:underline transition-all">
               Register Business
             </Link>
           </div>

@@ -15,14 +15,14 @@ export default async function SignupBusinessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center p-6 select-none relative overflow-hidden">
-      {/* Sleek dark minimalist grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35" />
+    <main className="min-h-screen bg-background text-foreground flex items-center justify-center p-6 select-none relative overflow-hidden">
+      {/* Light grid background pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f2_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f2_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-70 pointer-events-none" />
 
-      <div className="w-full max-w-md bg-zinc-950 border border-zinc-800/80 p-8 rounded-2xl shadow-2xl relative z-10 space-y-6">
+      <div className="w-full max-w-md bg-card border border-border p-8 rounded-2xl shadow-xl relative z-10 space-y-6">
         <div className="text-left space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Create Your Business</h1>
-          <p className="text-xs text-zinc-400">Complete your registration to start managing queues</p>
+          <h1 className="text-2xl font-heading font-extrabold tracking-tight text-foreground">Create Your Business</h1>
+          <p className="text-xs text-muted-foreground font-medium">Complete your registration to start managing queues</p>
         </div>
 
         <OnboardBusinessForm email={session.user.email!} />
