@@ -118,6 +118,8 @@ model QueueEntry {
   @@index([queueId, status])
   @@index([businessId])
   @@index([trackingToken])
+  @@index([joinedAt])
+  @@index([completedAt])
 }
 
 model Notification {
@@ -146,4 +148,5 @@ model AuditLog {
 
   @@index([businessId])
   @@index([targetType, targetId])
+  @@index([createdAt])
 }

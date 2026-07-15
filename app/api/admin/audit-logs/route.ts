@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "SUPER_ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -42,6 +42,6 @@ export async function GET(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Failed to retrieve platform audit logs:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
