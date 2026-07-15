@@ -239,7 +239,7 @@ export default function AdminAuditLogsPage() {
           <button
             type="button"
             onClick={handleResetFilters}
-            className="text-xs bg-white border border-border hover:bg-muted text-foreground font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+            className="text-xs bg-card border border-border hover:bg-muted text-foreground font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
           >
             Reset Filters
           </button>
@@ -288,7 +288,7 @@ export default function AdminAuditLogsPage() {
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => setSelectedLog(log)}
-                      className="text-xs bg-white hover:bg-muted border border-border text-foreground px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
+                      className="text-xs bg-card hover:bg-muted border border-border text-foreground px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
                     >
                       Inspect
                     </button>

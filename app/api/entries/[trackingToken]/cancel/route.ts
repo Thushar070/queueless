@@ -17,9 +17,14 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const { trackingToken } = await context.params;
 
-    // Fetch the entry first to verify boundaries
-    const entry = await prisma.queueEntry.findUnique({
-      where: { id: trackingToken },
+    // Fetch the entry first by id or trackingToken to verify boundaries
+    const entry = await prisma.queueEntry.findFirst({
+      where: {
+        OR: [
+          { id: trackingToken },
+          { trackingToken: trackingToken },
+        ],
+      },
     });
 
     if (!entry) {
@@ -38,7 +43,7 @@ export async function POST(request: Request, context: RouteContext) {
       const updated = await QueueService.cancelEntryByStaff(
         session.user.businessId,
         entry.queueId,
-        trackingToken,
+        entry.id,
         actor
       );
 
@@ -53,11 +58,20 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const updated = await QueueService.cancelEntry(trackingToken);
+    const updated = await QueueService.cancelEntry(entry.trackingToken);
     return NextResponse.json(updated);
   } catch (error: unknown) {
     console.error("Failed to cancel entry:", error);
     const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (
+      message.includes("not found") ||
+      message.includes("cannot be cancelled") ||
+      message.includes("only allowed while") ||
+      message.includes("Unauthorized") ||
+      message.includes("Invalid transition")
+    ) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

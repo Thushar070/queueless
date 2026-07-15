@@ -195,7 +195,7 @@ export default function StaffQueueDashboard({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setShowQrModal(true)}
-            className="w-full md:w-auto bg-white hover:bg-muted border border-border text-foreground font-semibold px-4 py-2.5 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer text-sm"
+            className="w-full md:w-auto bg-card hover:bg-muted border border-border text-foreground font-semibold px-4 py-2.5 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
             <QrCode className="size-4 text-muted-foreground" />
             Show QR Code
@@ -334,7 +334,7 @@ export default function StaffQueueDashboard({
                           <button
                             onClick={() => handleAction(`/api/entries/${entry.id}/cancel`, entry.id, "cancel")}
                             disabled={isMutating !== null}
-                            className="p-2 bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 rounded-lg transition-colors cursor-pointer"
+                             className="p-2 bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 rounded-lg transition-colors cursor-pointer"
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -369,14 +369,14 @@ export default function StaffQueueDashboard({
                       <button
                         onClick={() => handleAction(`/api/entries/${entry.id}/call`, entry.id, "call")}
                         disabled={isMutating !== null}
-                        className="bg-white hover:bg-muted border border-border text-foreground text-xs font-semibold py-1 px-3 rounded-lg transition-colors cursor-pointer"
+                        className="bg-card hover:bg-muted border border-border text-foreground text-xs font-semibold py-1 px-3 rounded-lg transition-colors cursor-pointer"
                       >
                         Call
                       </button>
                       <button
                         onClick={() => handleAction(`/api/entries/${entry.id}/skip`, entry.id, "skip")}
                         disabled={isMutating !== null}
-                        className="bg-white hover:bg-muted border border-border text-foreground text-xs font-semibold py-1 px-3 rounded-lg transition-colors cursor-pointer"
+                        className="bg-card hover:bg-muted border border-border text-foreground text-xs font-semibold py-1 px-3 rounded-lg transition-colors cursor-pointer"
                       >
                         Skip
                       </button>
@@ -535,7 +535,7 @@ export default function StaffQueueDashboard({
 
             <button
               onClick={() => alert("Broadcast update message triggers Twilio alerts overlay.")}
-              className="w-full bg-white hover:bg-muted border border-border text-foreground font-bold py-2.5 rounded-lg transition-all text-xs tracking-wider uppercase cursor-pointer shadow-sm"
+              className="w-full bg-card hover:bg-muted border border-border text-foreground font-bold py-2.5 rounded-lg transition-all text-xs tracking-wider uppercase cursor-pointer shadow-sm"
             >
               Broadcast Update
             </button>

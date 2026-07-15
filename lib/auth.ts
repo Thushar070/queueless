@@ -71,7 +71,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        if (!user.email) {
+        if (!user.email || typeof user.email !== "string" || !user.email.trim()) {
           return false;
         }
 

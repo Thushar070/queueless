@@ -172,21 +172,21 @@ export default function AdminBusinessesPage() {
                     {biz.status === "ACTIVE" ? (
                       <button
                         onClick={() => openConfirmation(biz, "suspend")}
-                        className="text-xs bg-white hover:bg-amber-50 text-amber-700 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                        className="text-xs bg-card hover:bg-amber-500/10 text-amber-700 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                       >
                         Suspend
                       </button>
                     ) : (
                       <button
                         onClick={() => openConfirmation(biz, "reactivate")}
-                        className="text-xs bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                        className="text-xs bg-card hover:bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                       >
                         Reactivate
                       </button>
                     )}
                     <button
                       onClick={() => openConfirmation(biz, "delete")}
-                      className="text-xs bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                      className="text-xs bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                     >
                       Delete
                     </button>
@@ -214,14 +214,14 @@ export default function AdminBusinessesPage() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => fetchBusinesses(currentPage - 1)}
-                className="text-xs bg-white border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                className="text-xs bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 Previous
               </button>
               <button
                 disabled={currentPage === pages}
                 onClick={() => fetchBusinesses(currentPage + 1)}
-                className="text-xs bg-white border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                className="text-xs bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 Next
               </button>
@@ -264,7 +264,7 @@ export default function AdminBusinessesPage() {
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setIsConfirming(false)}
-                className="text-xs bg-white border border-border hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm font-semibold"
+                className="text-xs bg-card border border-border hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm font-semibold"
               >
                 Cancel
               </button>

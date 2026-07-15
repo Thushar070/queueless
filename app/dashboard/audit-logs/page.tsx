@@ -227,7 +227,7 @@ export default function AuditLogsPage() {
           <button
             type="button"
             onClick={handleResetFilters}
-            className="bg-white hover:bg-muted border border-border text-foreground text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+            className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
           >
             Reset Filters
           </button>
@@ -247,7 +247,7 @@ export default function AuditLogsPage() {
             <p className="text-destructive text-sm mb-2 font-semibold">{error}</p>
             <button
               onClick={() => fetchLogs(currentPage)}
-              className="bg-white hover:bg-muted border border-border text-foreground text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
+              className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
             >
               Retry
             </button>
@@ -307,7 +307,7 @@ export default function AuditLogsPage() {
                     <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setSelectedLog(log)}
-                        className="bg-white hover:bg-muted border border-border text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                        className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                       >
                         Inspect
                       </button>

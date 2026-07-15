@@ -310,15 +310,15 @@ export default function QueuesPage() {
                 >
                   Manage Live
                 </Link>
-                <button
+                 <button
                   onClick={() => startEdit(queue)}
-                  className="bg-white hover:bg-muted border border-border text-foreground text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+                  className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => deleteQueue(queue.id)}
-                  className="bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 p-2 rounded-lg transition-colors cursor-pointer"
+                  className="bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 p-2 rounded-lg transition-colors cursor-pointer"
                   title="Delete Queue"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

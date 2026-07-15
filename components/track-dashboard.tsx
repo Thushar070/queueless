@@ -242,7 +242,7 @@ export default function TrackDashboard({
           <button
             onClick={handleCancel}
             disabled={isCancelling}
-            className="w-full bg-white hover:bg-red-50/50 disabled:bg-muted text-destructive disabled:text-muted-foreground border border-destructive/20 hover:border-destructive/40 text-xs font-semibold py-2.5 rounded-lg transition-all cursor-pointer shadow-sm"
+            className="w-full bg-card hover:bg-destructive/10 disabled:bg-muted text-destructive disabled:text-muted-foreground border border-destructive/20 hover:border-destructive/40 text-xs font-semibold py-2.5 rounded-lg transition-all cursor-pointer shadow-sm"
           >
             {isCancelling ? "Leaving Line..." : "Leave Virtual Line"}
           </button>

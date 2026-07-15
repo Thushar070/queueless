@@ -145,7 +145,7 @@ export default function DashboardSidebar({
 
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="w-full bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 text-xs font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              className="w-full bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 text-xs font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <LogOut className="size-3.5" />
               Sign Out

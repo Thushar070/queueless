@@ -178,7 +178,7 @@ export default function QrCodesPage() {
                 <button
                   onClick={() => regenerateQr(queue.id)}
                   disabled={regeneratingId === queue.id}
-                  className="bg-white hover:bg-muted border border-border text-foreground text-xs font-bold py-2.5 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                  className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold py-2.5 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   {regeneratingId === queue.id ? (
                     <div className="animate-spin rounded-full h-3 w-3 border-2 border-foreground border-t-transparent" />

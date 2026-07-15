@@ -180,7 +180,7 @@ export default function StaffPage() {
                 navigator.clipboard.writeText(successData.tempPass);
                 alert("Copied to clipboard!");
               }}
-              className="text-[10px] bg-white border border-border hover:bg-muted px-3 py-1.5 rounded-md text-foreground transition-colors font-bold shadow-sm"
+              className="text-[10px] bg-card border border-border hover:bg-muted px-3 py-1.5 rounded-md text-foreground transition-colors font-bold shadow-sm"
             >
               Copy
             </button>
@@ -279,7 +279,7 @@ export default function StaffPage() {
                   {member.id !== session?.user?.id && (
                     <button
                       onClick={() => handleDelete(member.id)}
-                      className="text-xs bg-white hover:bg-red-50 text-destructive border border-destructive/20 hover:border-destructive/40 px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+                      className="text-xs bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
                     >
                       Remove
                     </button>

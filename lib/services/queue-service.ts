@@ -140,9 +140,27 @@ export class QueueService {
 
     const newStatus = existing.status === "OPEN" ? "CLOSED" : "OPEN";
 
-    const updatedQueue = await prisma.queue.update({
-      where: { id: queueId },
-      data: { status: newStatus },
+    const updatedQueue = await prisma.$transaction(async (tx) => {
+      const updated = await tx.queue.update({
+        where: { id: queueId },
+        data: { status: newStatus },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          businessId,
+          actorId: actor.id,
+          actorRole: actor.role,
+          action: newStatus === "OPEN" ? "QUEUE_OPEN" : "QUEUE_CLOSED",
+          targetType: "Queue",
+          targetId: queueId,
+          metadata: {
+            status: newStatus,
+          },
+        },
+      });
+
+      return updated;
     });
 
     if (newStatus === "CLOSED") {
@@ -168,9 +186,27 @@ export class QueueService {
       throw new Error("Queue not found or unauthorized");
     }
 
-    const updated = await prisma.queue.update({
-      where: { id: queueId },
-      data: { deletedAt: new Date() },
+    const updated = await prisma.$transaction(async (tx) => {
+      const res = await tx.queue.update({
+        where: { id: queueId },
+        data: { deletedAt: new Date() },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          businessId,
+          actorId: actor.id,
+          actorRole: actor.role,
+          action: "QUEUE_DELETE",
+          targetType: "Queue",
+          targetId: queueId,
+          metadata: {
+            name: existing.name,
+          },
+        },
+      });
+
+      return res;
     });
 
     await this.massCancelWaitingEntries(queueId, actor);
