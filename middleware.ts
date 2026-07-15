@@ -15,6 +15,9 @@ export default withAuth(
 
     // 2. Guard for /dashboard/* -> Requires authenticated session with a businessId
     if (pathname.startsWith("/dashboard")) {
+      if (token?.role === "SUPER_ADMIN" && token?.email) {
+        return NextResponse.redirect(new URL("/admin", req.url));
+      }
       if (!token?.businessId) {
         return NextResponse.redirect(new URL("/signup/business", req.url));
       }

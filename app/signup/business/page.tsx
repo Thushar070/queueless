@@ -9,6 +9,11 @@ export default async function SignupBusinessPage() {
     redirect("/login");
   }
 
+  // If Super Admin, redirect to admin portal
+  if (session.user.role === "SUPER_ADMIN" && session.user.email) {
+    redirect("/admin");
+  }
+
   // If already linked to a business, redirect to dashboard
   if (session.user.businessId) {
     redirect("/dashboard");
