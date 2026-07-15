@@ -322,10 +322,53 @@ export class QueueService {
   /**
    * Joins a customer to a queue, enforcing duplicate prevention rules under the serialization lock.
    */
+  static getCurrentTime(): Date {
+    return new Date();
+  }
+
   static async joinQueue(
     queueId: string,
     input: { customerName: string; customerPhone: string; customerEmail?: string | null }
   ) {
+    // A. Pre-check capacity and working-hours schedule before taking the lock
+    const queueConfig = await prisma.queue.findFirst({
+      where: { id: queueId, deletedAt: null },
+      include: { business: true },
+    });
+
+    if (!queueConfig) {
+      throw new Error("Queue not found");
+    }
+
+    if (queueConfig.status !== "OPEN") {
+      throw new Error("Queue is closed");
+    }
+
+    // 1. Pre-check Capacity Limits
+    if (queueConfig.maxCapacity !== null) {
+      const activeCount = await prisma.queueEntry.count({
+        where: { queueId, status: QueueEntryStatus.WAITING },
+      });
+      if (activeCount >= queueConfig.maxCapacity) {
+        throw new Error("closed (at capacity)");
+      }
+    }
+
+    // 2. Pre-check Working Hours schedule (Queue-level takes precedence, fall back to Business-level)
+    const whStart = queueConfig.workingHoursStart ?? queueConfig.business.workingHoursStart;
+    const whEnd = queueConfig.workingHoursEnd ?? queueConfig.business.workingHoursEnd;
+
+    if (whStart && whEnd) {
+      const now = this.getCurrentTime();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const currentTime = `${hours}:${minutes}`;
+
+      if (currentTime < whStart || currentTime > whEnd) {
+        throw new Error("closed (outside hours)");
+      }
+    }
+
     const entry = await this.withQueueLock(queueId, async (tx) => {
       // 1. Verify Queue exists and is open
       const queue = await tx.queue.findFirst({
@@ -358,13 +401,13 @@ export class QueueService {
         throw new Error("You are already in this queue");
       }
 
-      // 3. Check for capacity limits
+      // 3. Check for capacity limits under transaction
       if (queue.maxCapacity !== null) {
         const currentCount = await tx.queueEntry.count({
           where: { queueId, status: QueueEntryStatus.WAITING },
         });
         if (currentCount >= queue.maxCapacity) {
-          throw new Error("Queue capacity limit has been reached");
+          throw new Error("closed (at capacity)");
         }
       }
 

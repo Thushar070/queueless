@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createQueueSchema, CreateQueueInput } from "@/lib/validation/queue";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 interface Queue {
   id: string;
@@ -20,6 +21,7 @@ interface Queue {
 }
 
 export default function QueuesPage() {
+  const { data: session } = useSession();
   const [queues, setQueues] = useState<Queue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,6 +220,16 @@ export default function QueuesPage() {
             <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
               QR Codes
             </Link>
+            {session?.user?.role === "BUSINESS_OWNER" && (
+              <>
+                <Link href="/dashboard/staff" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+                  Staff
+                </Link>
+                <Link href="/dashboard/settings" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+                  Settings
+                </Link>
+              </>
+            )}
           </nav>
         </div>
         <Link

@@ -69,6 +69,7 @@ model Staff {
   email        String    @unique
   passwordHash String?   // null if Google-only account
   role         UserRole  @default(STAFF) // BUSINESS_OWNER or STAFF only (SUPER_ADMIN model is separate)
+  mustChangePassword Boolean   @default(true)
   createdAt    DateTime  @default(now())
   deletedAt    DateTime?
 

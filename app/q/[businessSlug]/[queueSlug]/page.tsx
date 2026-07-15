@@ -30,6 +30,31 @@ export default async function PublicQueuePage({ params }: PublicQueuePageProps) 
     notFound();
   }
 
+  // 1. Proactive Capacity check
+  let isAtCapacity = false;
+  if (queue.maxCapacity !== null) {
+    const activeCount = await prisma.queueEntry.count({
+      where: { queueId: queue.id, status: "WAITING" },
+    });
+    isAtCapacity = activeCount >= queue.maxCapacity;
+  }
+
+  // 2. Proactive Working hours check (Queue-level schedule takes precedence over Business fallback)
+  let isOutsideHours = false;
+  const whStart = queue.workingHoursStart ?? queue.business.workingHoursStart;
+  const whEnd = queue.workingHoursEnd ?? queue.business.workingHoursEnd;
+
+  if (whStart && whEnd) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const currentTime = `${hours}:${minutes}`;
+
+    if (currentTime < whStart || currentTime > whEnd) {
+      isOutsideHours = true;
+    }
+  }
+
   return (
     <main className="min-h-screen bg-black text-white flex flex-col justify-center items-center p-6 relative overflow-hidden select-none">
       {/* Sleek B&W grid background */}
@@ -60,12 +85,12 @@ export default async function PublicQueuePage({ params }: PublicQueuePageProps) 
             <div>
               <span className="text-xs text-zinc-550 block font-semibold uppercase tracking-wider">Status</span>
               <span className={`inline-flex items-center gap-1.5 text-sm font-bold mt-0.5 ${
-                queue.status === "OPEN" ? "text-emerald-400" : "text-amber-400"
+                queue.status === "OPEN" && !isAtCapacity && !isOutsideHours ? "text-emerald-400" : "text-amber-400"
               }`}>
                 <span className={`w-2 h-2 rounded-full ${
-                  queue.status === "OPEN" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                  queue.status === "OPEN" && !isAtCapacity && !isOutsideHours ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
                 }`} />
-                {queue.status}
+                {queue.status === "OPEN" && !isAtCapacity && !isOutsideHours ? "OPEN" : "CLOSED"}
               </span>
             </div>
             <div>
@@ -78,12 +103,20 @@ export default async function PublicQueuePage({ params }: PublicQueuePageProps) 
         </div>
 
         <div className="pt-4 border-t border-zinc-900">
-          {queue.status === "OPEN" ? (
-            <JoinForm queueId={queue.id} />
-          ) : (
+          {queue.status !== "OPEN" ? (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs px-4 py-4 rounded-xl font-medium">
               ⚠️ This queue is currently closed. Registration is unavailable.
             </div>
+          ) : isAtCapacity ? (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs px-4 py-4 rounded-xl font-medium">
+              ⚠️ This queue is closed because it has reached its maximum capacity.
+            </div>
+          ) : isOutsideHours ? (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs px-4 py-4 rounded-xl font-medium">
+              ⚠️ This queue is closed outside scheduled working hours ({whStart} - {whEnd}).
+            </div>
+          ) : (
+            <JoinForm queueId={queue.id} />
           )}
         </div>
       </div>

@@ -28,22 +28,30 @@ export default function DashboardPage() {
 
       {/* Header */}
       <header className="border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
-        <h1 className="text-xl font-bold text-white tracking-tight">
-          QueueLess Dashboard
-        </h1>
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="text-xl font-bold text-white tracking-tight">
+            QueueLess
+          </Link>
+          <nav className="hidden md:flex gap-4">
+            <Link href="/dashboard/queues" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+              Queues
+            </Link>
+            <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+              QR Codes
+            </Link>
+            {session?.user?.role === "BUSINESS_OWNER" && (
+              <>
+                <Link href="/dashboard/staff" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+                  Staff
+                </Link>
+                <Link href="/dashboard/settings" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+                  Settings
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
         <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard/queues"
-            className="text-xs bg-white text-black font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer"
-          >
-            Manage Queues
-          </Link>
-          <Link
-            href="/dashboard/qr-codes"
-            className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold px-4 py-2 rounded-lg hover:bg-zinc-850 transition-colors"
-          >
-            QR Codes
-          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 font-semibold px-4 py-2 rounded-lg hover:text-white transition-colors cursor-pointer"

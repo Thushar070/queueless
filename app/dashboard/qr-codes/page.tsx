@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 interface Queue {
   id: string;
@@ -12,6 +13,7 @@ interface Queue {
 }
 
 export default function QrCodesPage() {
+  const { data: session } = useSession();
   const [queues, setQueues] = useState<Queue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +110,16 @@ export default function QrCodesPage() {
             <Link href="/dashboard/qr-codes" className="text-sm font-semibold text-white border-b-2 border-white pb-1">
               QR Codes
             </Link>
+            {session?.user?.role === "BUSINESS_OWNER" && (
+              <>
+                <Link href="/dashboard/staff" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+                  Staff
+                </Link>
+                <Link href="/dashboard/settings" className="text-sm font-semibold text-zinc-400 hover:text-white transition-colors">
+                  Settings
+                </Link>
+              </>
+            )}
           </nav>
         </div>
         <Link
