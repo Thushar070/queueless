@@ -4,7 +4,37 @@ import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import { comparePassword } from "@/lib/crypto";
 
+export async function findStaffOrAdminByEmail(email: string | null | undefined) {
+  if (!email || typeof email !== "string" || !email.trim()) {
+    return null;
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+
+  try {
+    const staff = await prisma.staff.findUnique({
+      where: { email: normalizedEmail },
+      include: { business: true },
+    });
+    if (staff) {
+      return { type: "staff" as const, data: staff };
+    }
+
+    const admin = await prisma.superAdmin.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (admin) {
+      return { type: "admin" as const, data: admin };
+    }
+  } catch (error) {
+    console.error("Database lookup failed for email:", normalizedEmail, error);
+    throw new Error("Database query failed");
+  }
+
+  return null;
+}
+
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "placeholder-client-id",
@@ -20,48 +50,40 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email) {
           return null;
         }
-        const normalizedEmail = credentials.email.trim().toLowerCase();
-
-        // 1. Search in Staff table first
-        const staff = await prisma.staff.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (staff && !staff.deletedAt) {
-          if (!staff.passwordHash) {
-            return null; // Google-only account
+        try {
+          const record = await findStaffOrAdminByEmail(credentials.email);
+          if (record?.type === "staff" && !record.data.deletedAt) {
+            const staff = record.data;
+            if (!staff.passwordHash) {
+              return null; // Google-only account
+            }
+            const isValid = await comparePassword(credentials.password, staff.passwordHash);
+            if (isValid) {
+              return {
+                id: staff.id,
+                name: staff.name,
+                email: staff.email,
+                role: staff.role,
+                businessId: staff.businessId,
+                mustChangePassword: staff.mustChangePassword,
+              };
+            }
+          } else if (record?.type === "admin") {
+            const admin = record.data;
+            const isValid = await comparePassword(credentials.password, admin.passwordHash);
+            if (isValid) {
+              return {
+                id: admin.id,
+                name: "Super Admin",
+                email: admin.email,
+                role: "SUPER_ADMIN",
+                businessId: null,
+              };
+            }
           }
-          const isValid = await comparePassword(credentials.password, staff.passwordHash);
-          if (isValid) {
-            return {
-              id: staff.id,
-              name: staff.name,
-              email: staff.email,
-              role: staff.role, // e.g. "BUSINESS_OWNER" | "STAFF"
-              businessId: staff.businessId,
-              mustChangePassword: staff.mustChangePassword,
-            };
-          }
+        } catch (error) {
+          console.error("Error in credentials authorize query:", error);
         }
-
-        // 2. Search in SuperAdmin table
-        const admin = await prisma.superAdmin.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (admin) {
-          const isValid = await comparePassword(credentials.password, admin.passwordHash);
-          if (isValid) {
-            return {
-              id: admin.id,
-              name: "Super Admin",
-              email: admin.email,
-              role: "SUPER_ADMIN",
-              businessId: null,
-            };
-          }
-        }
-
         return null;
       },
     }),
@@ -72,22 +94,16 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        if (!user.email || typeof user.email !== "string" || !user.email.trim()) {
-          return false;
+        try {
+          const record = await findStaffOrAdminByEmail(user.email);
+          if (record?.type === "staff" && record.data.deletedAt) {
+            return false; // Block Google login if staff member is soft-deleted
+          }
+          return true;
+        } catch (error) {
+          console.error("Error in signIn callback:", error);
+          return false; // Deny sign-in gracefully on DB failure
         }
-
-        const normalizedEmail = user.email.trim().toLowerCase();
-        const staff = await prisma.staff.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (staff && staff.deletedAt) {
-          return false; // Block Google login if staff member is soft-deleted
-        }
-
-        // Allow Google login. If they don't have a staff/admin record, they will have no businessId
-        // and will be redirected to /signup/business to complete onboarding.
-        return true;
       }
       return true;
     },
@@ -100,24 +116,16 @@ export const authOptions: NextAuthOptions = {
       // Whenever a token is generated/refreshed, resolve the user's role and businessId from the DB.
       // This enforces database as the single source of truth (Rule 7).
       if (token.email) {
-        const normalizedEmail = token.email.trim().toLowerCase();
-        const staff = await prisma.staff.findUnique({
-          where: { email: normalizedEmail },
-          include: { business: true },
-        });
-
-        if (staff && !staff.deletedAt) {
-          token.id = staff.id;
-          token.role = staff.role;
-          token.businessId = staff.businessId;
-          token.mustChangePassword = staff.mustChangePassword;
-          token.profileCompleted = staff.business?.profileCompleted ?? false;
-        } else {
-          const admin = await prisma.superAdmin.findUnique({
-            where: { email: normalizedEmail },
-          });
-          if (admin) {
-            token.id = admin.id;
+        try {
+          const record = await findStaffOrAdminByEmail(token.email);
+          if (record?.type === "staff" && !record.data.deletedAt) {
+            token.id = record.data.id;
+            token.role = record.data.role;
+            token.businessId = record.data.businessId;
+            token.mustChangePassword = record.data.mustChangePassword;
+            token.profileCompleted = record.data.business?.profileCompleted ?? false;
+          } else if (record?.type === "admin") {
+            token.id = record.data.id;
             token.role = "SUPER_ADMIN";
             token.businessId = null;
             token.mustChangePassword = false;
@@ -130,6 +138,9 @@ export const authOptions: NextAuthOptions = {
             token.mustChangePassword = undefined;
             token.profileCompleted = false;
           }
+        } catch (error) {
+          console.error("Error in jwt callback database query:", error);
+          // Do not overwrite existing token parameters, fail gracefully by returning current token
         }
       }
       return token;
