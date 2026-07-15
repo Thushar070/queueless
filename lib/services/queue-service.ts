@@ -332,12 +332,22 @@ export class QueueService {
   ) {
     // A. Pre-check capacity and working-hours schedule before taking the lock
     const queueConfig = await prisma.queue.findFirst({
-      where: { id: queueId, deletedAt: null },
+      where: {
+        id: queueId,
+        deletedAt: null,
+        business: {
+          deletedAt: null,
+        },
+      },
       include: { business: true },
     });
 
     if (!queueConfig) {
       throw new Error("Queue not found");
+    }
+
+    if (queueConfig.business.status === "SUSPENDED") {
+      throw new Error("Business is suspended");
     }
 
     if (queueConfig.status !== "OPEN") {

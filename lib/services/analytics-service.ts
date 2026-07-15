@@ -10,6 +10,12 @@ export interface AnalyticsMetrics {
   averageServiceDurationMin: number;
 }
 
+export interface PlatformMetrics extends AnalyticsMetrics {
+  totalBusinesses: number;
+  activeBusinesses: number;
+  suspendedBusinesses: number;
+}
+
 export class AnalyticsService {
   static async getMetrics(businessId: string): Promise<AnalyticsMetrics> {
     // 1. Customers served today (completedAt >= UTC midnight today)
@@ -130,6 +136,121 @@ export class AnalyticsService {
       cancellationRate,
       peakHoursHistogram,
       averageServiceDurationMin,
+    };
+  }
+
+  static async getPlatformMetrics(): Promise<PlatformMetrics> {
+    // 1. Customers served today (completedAt >= UTC midnight today) across all businesses
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const servedTodayCount = await prisma.queueEntry.count({
+      where: {
+        status: QueueEntryStatus.COMPLETED,
+        completedAt: { gte: today },
+      },
+    });
+
+    // 2. Average wait time (joinedAt -> calledAt for called/completed/serving/skipped entries) across all businesses
+    const waitTimeResult = await prisma.$queryRaw<Array<{ avg_wait_min: number | null }>>`
+      SELECT AVG(EXTRACT(EPOCH FROM ("calledAt" - "joinedAt")) / 60) as avg_wait_min
+      FROM "QueueEntry"
+      WHERE "calledAt" IS NOT NULL
+    `;
+    const averageWaitTimeMin = waitTimeResult[0]?.avg_wait_min 
+      ? Math.round(Number(waitTimeResult[0].avg_wait_min) * 10) / 10 
+      : 0;
+
+    // 3. Active queue length overall (live WAITING count)
+    const totalActiveLength = await prisma.queueEntry.count({
+      where: {
+        status: QueueEntryStatus.WAITING,
+      },
+    });
+    const activeQueueLengths = [
+      { queueId: "all", queueName: "Platform Total", length: totalActiveLength }
+    ];
+
+    // 4. Cancellation rate: CANCELLED / (CANCELLED + COMPLETED + SKIPPED) across all businesses
+    const statusCounts = await prisma.queueEntry.groupBy({
+      by: ["status"],
+      where: {
+        status: {
+          in: [
+            QueueEntryStatus.CANCELLED,
+            QueueEntryStatus.COMPLETED,
+            QueueEntryStatus.SKIPPED,
+          ],
+        },
+      },
+      _count: {
+        status: true,
+      },
+    });
+
+    let cancelledCount = 0;
+    let totalTerminalCount = 0;
+
+    for (const item of statusCounts) {
+      const count = item._count.status;
+      if (item.status === QueueEntryStatus.CANCELLED) {
+        cancelledCount = count;
+      }
+      totalTerminalCount += count;
+    }
+
+    const cancellationRate = totalTerminalCount > 0 
+      ? Math.round((cancelledCount / totalTerminalCount) * 1000) / 10 
+      : 0;
+
+    // 5. Peak hours histogram (joinedAt grouped by hour-of-day in UTC) across all businesses
+    const histogramRaw = await prisma.$queryRaw<Array<{ hour: number | string; count: bigint | number }>>`
+      SELECT EXTRACT(HOUR FROM "joinedAt" AT TIME ZONE 'UTC') as hour, COUNT(*)::bigint as count
+      FROM "QueueEntry"
+      GROUP BY hour
+      ORDER BY hour ASC
+    `;
+
+    const peakHoursHistogram = Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      count: 0,
+    }));
+
+    for (const item of histogramRaw) {
+      const h = Number(item.hour);
+      const c = Number(item.count);
+      if (h >= 0 && h < 24) {
+        peakHoursHistogram[h].count = c;
+      }
+    }
+
+    // 6. Average service duration (servingAt -> completedAt for completed entries) across all businesses
+    const serviceResult = await prisma.$queryRaw<Array<{ avg_service_min: number | null }>>`
+      SELECT AVG(EXTRACT(EPOCH FROM ("completedAt" - "servingAt")) / 60) as avg_service_min
+      FROM "QueueEntry"
+      WHERE "status" = 'COMPLETED' AND "completedAt" IS NOT NULL AND "servingAt" IS NOT NULL
+    `;
+    const averageServiceDurationMin = serviceResult[0]?.avg_service_min 
+      ? Math.round(Number(serviceResult[0].avg_service_min) * 10) / 10 
+      : 0;
+
+    // 7. Business counts
+    const [totalBusinesses, activeBusinesses, suspendedBusinesses] = await Promise.all([
+      prisma.business.count({ where: { deletedAt: null } }),
+      prisma.business.count({ where: { status: "ACTIVE", deletedAt: null } }),
+      prisma.business.count({ where: { status: "SUSPENDED", deletedAt: null } }),
+    ]);
+
+    return {
+      servedTodayCount,
+      averageWaitTimeMin,
+      activeQueueLengths,
+      cancellationRate,
+      peakHoursHistogram,
+      averageServiceDurationMin,
+      totalBusinesses,
+      activeBusinesses,
+      suspendedBusinesses,
     };
   }
 }

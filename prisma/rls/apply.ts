@@ -3,7 +3,7 @@ import { join } from "path";
 import { prisma } from "../../lib/prisma";
 
 async function main() {
-  const sqlPath = join(__dirname, "policies.sql");
+  const sqlPath = join(__dirname, "..", "policies.sql");
   const sql = readFileSync(sqlPath, "utf-8");
 
   console.log("Applying RLS policies to database...");

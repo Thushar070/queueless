@@ -12,13 +12,14 @@ interface PublicQueuePageProps {
 export default async function PublicQueuePage({ params }: PublicQueuePageProps) {
   const { businessSlug, queueSlug } = await params;
 
-  // Fetch the queue and its parent business, ensuring it's not soft-deleted
+  // Fetch the queue and its parent business, ensuring neither is soft-deleted
   const queue = await prisma.queue.findFirst({
     where: {
       slug: queueSlug,
       deletedAt: null,
       business: {
         slug: businessSlug,
+        deletedAt: null,
       },
     },
     include: {
@@ -28,6 +29,21 @@ export default async function PublicQueuePage({ params }: PublicQueuePageProps) 
 
   if (!queue) {
     notFound();
+  }
+
+  // Handle suspended business lockout
+  if (queue.business.status === "SUSPENDED") {
+    return (
+      <main className="min-h-screen bg-black text-white flex flex-col justify-center items-center p-6 relative overflow-hidden select-none">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-35" />
+        <div className="w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-2xl p-8 backdrop-blur-md shadow-2xl text-center space-y-4 z-10 relative">
+          <h1 className="text-2xl font-bold text-red-500">Temporarily Unavailable</h1>
+          <p className="text-zinc-400 text-sm">
+            This business is currently suspended. Please contact business administration for more details.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   // 1. Proactive Capacity check
