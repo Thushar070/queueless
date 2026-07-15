@@ -316,14 +316,14 @@ export default function AdminAuditLogsPage() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => fetchLogs(currentPage - 1)}
-                className="text-xs bg-white border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
+                className="text-xs bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
               >
                 Previous
               </button>
               <button
                 disabled={currentPage === pages}
                 onClick={() => fetchLogs(currentPage + 1)}
-                className="text-xs bg-white border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
+                className="text-xs bg-card border border-border text-foreground hover:bg-muted disabled:opacity-50 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm font-bold"
               >
                 Next
               </button>

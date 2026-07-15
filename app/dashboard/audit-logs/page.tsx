@@ -329,7 +329,7 @@ export default function AuditLogsPage() {
               <button
                 disabled={currentPage <= 1 || loading}
                 onClick={() => fetchLogs(currentPage - 1)}
-                className="bg-white hover:bg-muted border border-border disabled:opacity-50 disabled:pointer-events-none text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                className="bg-card hover:bg-muted border border-border disabled:opacity-50 disabled:pointer-events-none text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 Previous
               </button>
@@ -339,7 +339,7 @@ export default function AuditLogsPage() {
               <button
                 disabled={currentPage >= pages || loading}
                 onClick={() => fetchLogs(currentPage + 1)}
-                className="bg-white hover:bg-muted border border-border disabled:opacity-50 disabled:pointer-events-none text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                className="bg-card hover:bg-muted border border-border disabled:opacity-50 disabled:pointer-events-none text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
               >
                 Next
               </button>

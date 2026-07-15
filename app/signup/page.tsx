@@ -96,8 +96,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4 relative overflow-hidden select-none">
-      {/* Light grid background pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f2_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f2_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-70 pointer-events-none" />
 
       <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl p-8 relative z-10">
         <div className="text-center mb-6">
@@ -126,7 +124,7 @@ export default function SignupPage() {
             {/* Google Signup button */}
             <button
               onClick={handleGoogleSignup}
-              className="w-full bg-white hover:bg-muted text-foreground border border-border text-xs font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              className="w-full bg-card hover:bg-muted text-foreground border border-border text-xs font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path

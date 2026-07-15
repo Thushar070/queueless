@@ -6,9 +6,6 @@ export default function Home() {
     <main className="min-h-screen bg-background text-foreground flex flex-col justify-between overflow-x-hidden font-sans">
       {/* 1. DARK HERO SECTION */}
       <div className="bg-black text-white relative overflow-hidden select-none border-b border-zinc-900 pb-20">
-        {/* Sleek dark grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-70" />
-
         {/* Navigation Header */}
         <header className="max-w-6xl mx-auto w-full px-6 py-6 flex justify-between items-center z-10 relative">
           <span className="text-xl font-heading font-extrabold tracking-tight text-white">

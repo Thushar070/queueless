@@ -161,8 +161,6 @@ export default function TrackDashboard({
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
-      {/* Sleek light grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35" />
 
       {/* Subtle minimalist background glows */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-secondary/20 rounded-full blur-3xl pointer-events-none" />
