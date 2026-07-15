@@ -44,6 +44,9 @@ model Business {
   subscription      String?        // e.g. "FREE" | "PRO" — informational only, no billing enforced
   workingHoursStart String?        // "09:00", nullable = no restriction
   workingHoursEnd   String?        // "18:00"
+  profileCompleted  Boolean        @default(false)
+  address           String?
+  category          String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   deletedAt         DateTime?      // soft delete
@@ -51,6 +54,7 @@ model Business {
   staff             Staff[]
   queues            Queue[]
   auditLogs         AuditLog[]
+  sections          Section[]
 }
 
 model SuperAdmin {
@@ -90,6 +94,8 @@ model Queue {
   qrCodeUrl         String?      // stored generated QR image URL (Supabase storage)
   createdAt         DateTime     @default(now())
   deletedAt         DateTime?
+  sectionId         String?
+  section           Section?     @relation(fields: [sectionId], references: [id])
 
   entries           QueueEntry[]
 
@@ -149,4 +155,18 @@ model AuditLog {
   @@index([businessId])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+model Section {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  queues     Queue[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
 }

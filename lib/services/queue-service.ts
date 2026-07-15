@@ -86,6 +86,7 @@ export class QueueService {
           maxCapacity: validated.maxCapacity ?? null,
           workingHoursStart: validated.workingHoursStart || null,
           workingHoursEnd: validated.workingHoursEnd || null,
+          sectionId: validated.sectionId || null,
           qrCodeUrl,
           status: "OPEN",
         },
@@ -118,6 +119,8 @@ export class QueueService {
           validated.workingHoursStart !== undefined ? validated.workingHoursStart || null : undefined,
         workingHoursEnd:
           validated.workingHoursEnd !== undefined ? validated.workingHoursEnd || null : undefined,
+        sectionId:
+          validated.sectionId !== undefined ? validated.sectionId || null : undefined,
       },
     });
   }

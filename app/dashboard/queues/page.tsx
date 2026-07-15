@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createQueueSchema, CreateQueueInput } from "@/lib/validation/queue";
+import { z } from "zod";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
@@ -17,12 +18,19 @@ interface Queue {
   workingHoursStart: string | null;
   workingHoursEnd: string | null;
   qrCodeUrl: string | null;
+  sectionId: string | null;
   createdAt: string;
+}
+
+interface Section {
+  id: string;
+  name: string;
 }
 
 export default function QueuesPage() {
   const { data: session } = useSession();
   const [queues, setQueues] = useState<Queue[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -38,7 +46,7 @@ export default function QueuesPage() {
     reset,
     setValue,
     formState: { errors },
-  } = useForm({
+  } = useForm<z.input<typeof createQueueSchema>>({
     resolver: zodResolver(createQueueSchema),
     defaultValues: {
       name: "",
@@ -46,6 +54,7 @@ export default function QueuesPage() {
       maxCapacity: null,
       workingHoursStart: "",
       workingHoursEnd: "",
+      sectionId: "",
     },
   });
 
@@ -54,12 +63,20 @@ export default function QueuesPage() {
       if (showLoading) {
         setLoading(true);
       }
-      const res = await fetch("/api/queues");
-      if (!res.ok) {
+      const [queuesRes, sectionsRes] = await Promise.all([
+        fetch("/api/queues"),
+        fetch("/api/sections"),
+      ]);
+      if (!queuesRes.ok) {
         throw new Error("Failed to fetch queues");
       }
-      const data = await res.json();
-      setQueues(data);
+      const queuesData = await queuesRes.json();
+      setQueues(queuesData);
+
+      if (sectionsRes.ok) {
+        const sectionsData = await sectionsRes.json();
+        setSections(sectionsData);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An error occurred";
       setError(message);
@@ -74,13 +91,22 @@ export default function QueuesPage() {
     let active = true;
     const load = async () => {
       try {
-        const res = await fetch("/api/queues");
-        if (!res.ok) {
+        const [queuesRes, sectionsRes] = await Promise.all([
+          fetch("/api/queues"),
+          fetch("/api/sections"),
+        ]);
+        if (!queuesRes.ok) {
           throw new Error("Failed to fetch queues");
         }
-        const data = await res.json();
+        const queuesData = await queuesRes.json();
+        let sectionsData = [];
+        if (sectionsRes.ok) {
+          sectionsData = await sectionsRes.json();
+        }
+
         if (active) {
-          setQueues(data);
+          setQueues(queuesData);
+          setSections(sectionsData);
         }
       } catch (err: unknown) {
         if (active) {
@@ -99,14 +125,18 @@ export default function QueuesPage() {
     };
   }, []);
 
-  const onCreateSubmit = async (data: CreateQueueInput) => {
+  const onCreateSubmit = async (data: any) => {
     setIsSubmitting(true);
     setError(null);
     try {
+      const payload = {
+        ...data,
+        sectionId: data.sectionId || null,
+      };
       const res = await fetch("/api/queues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -125,15 +155,19 @@ export default function QueuesPage() {
     }
   };
 
-  const onEditSubmit = async (data: CreateQueueInput) => {
+  const onEditSubmit = async (data: any) => {
     if (!editingQueue) return;
     setIsSubmitting(true);
     setError(null);
     try {
+      const payload = {
+        ...data,
+        sectionId: data.sectionId || null,
+      };
       const res = await fetch(`/api/queues/${editingQueue.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -200,7 +234,84 @@ export default function QueuesPage() {
     setValue("maxCapacity", queue.maxCapacity);
     setValue("workingHoursStart", queue.workingHoursStart || "");
     setValue("workingHoursEnd", queue.workingHoursEnd || "");
+    setValue("sectionId", queue.sectionId || "");
   };
+
+  const renderQueueCard = (queue: Queue) => (
+    <div
+      key={queue.id}
+      className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+    >
+      <div>
+        <div className="flex items-start justify-between gap-2 mb-4">
+          <div className="text-left">
+            <h3 className="font-heading font-extrabold text-lg text-foreground truncate max-w-[150px]" title={queue.name}>
+              {queue.name}
+            </h3>
+            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">/q/{queue.slug}</p>
+          </div>
+          {/* Status Badge */}
+          <button
+            onClick={() => toggleStatus(queue.id)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border cursor-pointer select-none transition-all ${
+              queue.status === "OPEN"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-500/20 hover:bg-emerald-100"
+                : "bg-amber-50 text-amber-700 border-amber-500/20 hover:bg-amber-100"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${queue.status === "OPEN" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+            {queue.status}
+          </button>
+        </div>
+
+        <div className="space-y-2 mt-4 text-xs font-medium text-muted-foreground text-left">
+          <div className="flex justify-between">
+            <span>Service Time:</span>
+            <span className="font-bold text-foreground">{queue.avgServiceTimeMin} min / person</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Max Capacity:</span>
+            <span className="font-bold text-foreground">
+              {queue.maxCapacity !== null ? `${queue.maxCapacity} people` : "Unlimited"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Hours:</span>
+            <span className="font-bold text-foreground">
+              {queue.workingHoursStart && queue.workingHoursEnd
+                ? `${queue.workingHoursStart} - ${queue.workingHoursEnd}`
+                : "No restrictions"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Card actions */}
+      <div className="flex gap-2 mt-6 border-t border-border pt-4 relative z-10">
+        <Link
+          href={`/dashboard/queues/${queue.id}`}
+          className="flex-1 text-center bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-sm"
+        >
+          Manage Live
+        </Link>
+         <button
+          onClick={() => startEdit(queue)}
+          className="bg-card border border-border text-foreground text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => deleteQueue(queue.id)}
+          className="bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 p-2 rounded-lg transition-colors cursor-pointer"
+          title="Delete Queue"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8 select-none">
@@ -251,83 +362,44 @@ export default function QueuesPage() {
             Configure First Queue
           </button>
         </div>
-      ) : (
+      ) : sections.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {queues.map((queue) => (
-            <div
-              key={queue.id}
-              className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-4">
-                  <div className="text-left">
-                    <h3 className="font-heading font-extrabold text-lg text-foreground truncate max-w-[150px]" title={queue.name}>
-                      {queue.name}
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">/q/{queue.slug}</p>
-                  </div>
-                  {/* Status Badge */}
-                  <button
-                    onClick={() => toggleStatus(queue.id)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border cursor-pointer select-none transition-all ${
-                      queue.status === "OPEN"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-500/20 hover:bg-emerald-100"
-                        : "bg-amber-50 text-amber-700 border-amber-500/20 hover:bg-amber-100"
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${queue.status === "OPEN" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                    {queue.status}
-                  </button>
+          {queues.map((queue) => renderQueueCard(queue))}
+        </div>
+      ) : (
+        <div className="space-y-12">
+          {sections.map((section) => {
+            const sectionQueues = queues.filter((q) => q.sectionId === section.id);
+            if (sectionQueues.length === 0) return null;
+            return (
+              <div key={section.id} className="space-y-4">
+                <div className="border-b border-border pb-2 text-left">
+                  <h3 className="text-sm font-heading font-extrabold text-foreground uppercase tracking-wider">{section.name}</h3>
                 </div>
-
-                <div className="space-y-2 mt-4 text-xs font-medium text-muted-foreground text-left">
-                  <div className="flex justify-between">
-                    <span>Service Time:</span>
-                    <span className="font-bold text-foreground">{queue.avgServiceTimeMin} min / person</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Max Capacity:</span>
-                    <span className="font-bold text-foreground">
-                      {queue.maxCapacity !== null ? `${queue.maxCapacity} people` : "Unlimited"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Hours:</span>
-                    <span className="font-bold text-foreground">
-                      {queue.workingHoursStart && queue.workingHoursEnd
-                        ? `${queue.workingHoursStart} - ${queue.workingHoursEnd}`
-                        : "No restrictions"}
-                    </span>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sectionQueues.map((queue) => renderQueueCard(queue))}
                 </div>
               </div>
+            );
+          })}
 
-              {/* Card actions */}
-              <div className="flex gap-2 mt-6 border-t border-border pt-4 relative z-10">
-                <Link
-                  href={`/dashboard/queues/${queue.id}`}
-                  className="flex-1 text-center bg-primary hover:bg-primary/95 text-primary-foreground text-xs font-bold py-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-sm"
-                >
-                  Manage Live
-                </Link>
-                 <button
-                  onClick={() => startEdit(queue)}
-                  className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => deleteQueue(queue.id)}
-                  className="bg-card hover:bg-destructive/10 text-destructive border border-destructive/20 hover:border-destructive/40 p-2 rounded-lg transition-colors cursor-pointer"
-                  title="Delete Queue"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+          {/* Unassigned Queues */}
+          {(() => {
+            const unassignedQueues = queues.filter(
+              (q) => !q.sectionId || !sections.some((s) => s.id === q.sectionId)
+            );
+            if (unassignedQueues.length === 0) return null;
+            return (
+              <div className="space-y-4">
+                <div className="border-b border-border pb-2 text-left">
+                  <h3 className="text-sm font-heading font-extrabold text-foreground uppercase tracking-wider">Unassigned Queues</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {unassignedQueues.map((queue) => renderQueueCard(queue))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })()}
         </div>
       )}
 
@@ -370,6 +442,27 @@ export default function QueuesPage() {
                   className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
                 />
                 {errors.name && <p className="text-destructive text-xs mt-1">{errors.name.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1.5" htmlFor="sectionId">
+                  Queue Section (Optional visual grouping)
+                </label>
+                <select
+                  id="sectionId"
+                  {...register("sectionId")}
+                  className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+                >
+                  <option value="">No Section (Unassigned)</option>
+                  {sections.map((sec) => (
+                    <option key={sec.id} value={sec.id}>
+                      {sec.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.sectionId && (
+                  <p className="text-destructive text-xs mt-1">{errors.sectionId.message}</p>
+                )}
               </div>
 
               <div>

@@ -86,3 +86,23 @@ CREATE POLICY audit_log_tenant_policy ON "AuditLog"
     (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') OR
     ("businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId')
   );
+
+-- =====================================================================
+-- 6. SECTION TABLE POLICIES
+-- =====================================================================
+ALTER TABLE "Section" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS section_tenant_policy ON "Section";
+CREATE POLICY section_tenant_policy ON "Section"
+  FOR ALL
+  TO authenticated
+  USING (
+    (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') OR
+    ("businessId" = auth.jwt() -> 'user_metadata' ->> 'businessId')
+  );
+
+DROP POLICY IF EXISTS section_public_read_policy ON "Section";
+CREATE POLICY section_public_read_policy ON "Section"
+  FOR SELECT
+  TO anon, authenticated
+  USING (true);

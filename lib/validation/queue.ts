@@ -16,6 +16,7 @@ export const createQueueSchema = z.object({
     .nullable()
     .optional()
     .or(z.literal("")),
+  sectionId: z.string().nullable().optional(),
 });
 
 export const updateQueueSchema = createQueueSchema.partial();

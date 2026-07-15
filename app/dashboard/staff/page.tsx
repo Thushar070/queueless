@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import CSVImport from "@/components/csv-import";
+import { FileSpreadsheet } from "lucide-react";
 
 interface StaffMember {
   id: string;
@@ -21,6 +23,7 @@ export default function StaffPage() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -146,9 +149,18 @@ export default function StaffPage() {
 
   return (
     <div className="space-y-8 select-none text-left">
-      <div>
-        <h2 className="text-3xl font-heading font-extrabold tracking-tight text-foreground font-heading">Staff Management</h2>
-        <p className="text-muted-foreground text-sm mt-1 font-medium">Add, manage roles, and delete staff credentials for your business.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-heading font-extrabold tracking-tight text-foreground font-heading">Staff Management</h2>
+          <p className="text-muted-foreground text-sm mt-1 font-medium">Add, manage roles, and delete staff credentials for your business.</p>
+        </div>
+        <button
+          onClick={() => setIsImportOpen(true)}
+          className="bg-card hover:bg-muted border border-border text-foreground text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm flex items-center gap-1.5 h-fit self-start sm:self-auto"
+        >
+          <FileSpreadsheet className="size-4 text-muted-foreground" />
+          Bulk Import
+        </button>
       </div>
 
       {error && (
@@ -289,6 +301,13 @@ export default function StaffPage() {
           )}
         </div>
       </div>
+
+      {isImportOpen && (
+        <CSVImport
+          onClose={() => setIsImportOpen(false)}
+          onSuccess={() => fetchStaff()}
+        />
+      )}
     </div>
   );
 }

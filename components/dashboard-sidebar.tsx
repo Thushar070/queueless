@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   HelpCircle,
-  MessageCircle
+  MessageCircle,
+  FolderKanban
 } from "lucide-react";
 
 interface SidebarProps {
@@ -41,6 +42,7 @@ export default function DashboardSidebar({
     { href: "/dashboard/qr-codes", label: "QR Codes", icon: QrCode },
     ...(userRole === "BUSINESS_OWNER"
       ? [
+          { href: "/dashboard/sections", label: "Sections", icon: FolderKanban },
           { href: "/dashboard/staff", label: "Staff", icon: Users },
           { href: "/dashboard/settings", label: "Settings", icon: Settings }
         ]

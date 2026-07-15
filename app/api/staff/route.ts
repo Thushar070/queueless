@@ -47,10 +47,11 @@ export async function POST(request: Request) {
     }
 
     const { name, email, role } = result.data;
+    const normalizedEmail = email.trim().toLowerCase();
 
     // Check if email already registered
     const existing = await prisma.staff.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existing) {
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       data: {
         businessId: session.user.businessId,
         name,
-        email,
+        email: normalizedEmail,
         role: role as UserRole,
         passwordHash,
         mustChangePassword: true,

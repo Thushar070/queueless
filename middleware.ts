@@ -24,6 +24,16 @@ export default withAuth(
       if (token?.role !== "BUSINESS_OWNER" && token?.role !== "STAFF") {
         return NextResponse.redirect(new URL("/login", req.url));
       }
+      if (token?.profileCompleted === false) {
+        return NextResponse.redirect(new URL("/onboarding/profile", req.url));
+      }
+    }
+
+    // 3. Guard for /onboarding/* -> Requires businessId
+    if (pathname.startsWith("/onboarding")) {
+      if (!token?.businessId) {
+        return NextResponse.redirect(new URL("/signup/business", req.url));
+      }
     }
 
     return NextResponse.next();
@@ -39,5 +49,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*"],
 };

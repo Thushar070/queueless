@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This business URL slug is already taken" }, { status: 400 });
     }
 
-    const userEmail = session.user.email;
+    const userEmail = session.user.email.trim().toLowerCase();
 
     // Check if user already has a staff association
     const existingStaff = await prisma.staff.findUnique({

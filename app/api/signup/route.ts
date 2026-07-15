@@ -26,9 +26,12 @@ export async function POST(request: Request) {
       password,
     } = result.data;
 
+    const normalizedOwnerEmail = ownerEmail.trim().toLowerCase();
+    const normalizedBusinessEmail = businessEmail.trim().toLowerCase();
+
     // 1. Check for email uniqueness in Staff table
     const existingStaff = await prisma.staff.findUnique({
-      where: { email: ownerEmail },
+      where: { email: normalizedOwnerEmail },
     });
     if (existingStaff) {
       return NextResponse.json(
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
 
     // 3. Check for business email uniqueness
     const existingBusinessEmail = await prisma.business.findUnique({
-      where: { email: businessEmail },
+      where: { email: normalizedBusinessEmail },
     });
     if (existingBusinessEmail) {
       return NextResponse.json(
@@ -68,7 +71,7 @@ export async function POST(request: Request) {
         data: {
           name: businessName,
           slug: businessSlug,
-          email: businessEmail,
+          email: normalizedBusinessEmail,
           phone: businessPhone || null,
           status: "ACTIVE",
         },
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
         data: {
           businessId: businessCreated.id,
           name: ownerName,
-          email: ownerEmail,
+          email: normalizedOwnerEmail,
           passwordHash,
           role: "BUSINESS_OWNER",
         },

@@ -49,6 +49,8 @@
 }
 
 :root {
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+  --font-outfit: "Outfit", system-ui, -apple-system, sans-serif;
   --background: oklch(0.975 0.002 240); /* Soft cool off-white canvas */
   --foreground: oklch(0.1 0 0); /* Pure black/charcoal text */
   --card: oklch(1 0 0); /* Pure white cards */

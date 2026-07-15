@@ -17,13 +17,14 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email) {
           return null;
         }
+        const normalizedEmail = credentials.email.trim().toLowerCase();
 
         // 1. Search in Staff table first
         const staff = await prisma.staff.findUnique({
-          where: { email: credentials.email },
+          where: { email: normalizedEmail },
         });
 
         if (staff && !staff.deletedAt) {
@@ -45,7 +46,7 @@ export const authOptions: NextAuthOptions = {
 
         // 2. Search in SuperAdmin table
         const admin = await prisma.superAdmin.findUnique({
-          where: { email: credentials.email },
+          where: { email: normalizedEmail },
         });
 
         if (admin) {
@@ -75,8 +76,9 @@ export const authOptions: NextAuthOptions = {
           return false;
         }
 
+        const normalizedEmail = user.email.trim().toLowerCase();
         const staff = await prisma.staff.findUnique({
-          where: { email: user.email },
+          where: { email: normalizedEmail },
         });
 
         if (staff && staff.deletedAt) {
@@ -98,8 +100,10 @@ export const authOptions: NextAuthOptions = {
       // Whenever a token is generated/refreshed, resolve the user's role and businessId from the DB.
       // This enforces database as the single source of truth (Rule 7).
       if (token.email) {
+        const normalizedEmail = token.email.trim().toLowerCase();
         const staff = await prisma.staff.findUnique({
-          where: { email: token.email },
+          where: { email: normalizedEmail },
+          include: { business: true },
         });
 
         if (staff && !staff.deletedAt) {
@@ -107,21 +111,24 @@ export const authOptions: NextAuthOptions = {
           token.role = staff.role;
           token.businessId = staff.businessId;
           token.mustChangePassword = staff.mustChangePassword;
+          token.profileCompleted = staff.business?.profileCompleted ?? false;
         } else {
           const admin = await prisma.superAdmin.findUnique({
-            where: { email: token.email },
+            where: { email: normalizedEmail },
           });
           if (admin) {
             token.id = admin.id;
             token.role = "SUPER_ADMIN";
             token.businessId = null;
             token.mustChangePassword = false;
+            token.profileCompleted = true;
           } else {
             // Invalidate session immediately if staff member was soft-deleted/not found
             token.id = "";
             token.role = "";
             token.businessId = null;
             token.mustChangePassword = undefined;
+            token.profileCompleted = false;
           }
         }
       }
@@ -133,6 +140,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.businessId = token.businessId;
         session.user.mustChangePassword = token.mustChangePassword;
+        session.user.profileCompleted = token.profileCompleted;
       }
       return session;
     },

@@ -7,6 +7,7 @@ declare module "next-auth" {
       businessId: string | null;
       role: string;
       mustChangePassword?: boolean;
+      profileCompleted?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -14,6 +15,7 @@ declare module "next-auth" {
     businessId: string | null;
     role: string;
     mustChangePassword?: boolean;
+    profileCompleted?: boolean;
   }
 }
 
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
     businessId: string | null;
     role: string;
     mustChangePassword?: boolean;
+    profileCompleted?: boolean;
   }
 }
