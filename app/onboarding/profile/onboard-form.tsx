@@ -53,7 +53,11 @@ export default function OnboardProfileForm() {
       }
 
       // Force NextAuth session update to refresh the JWT profileCompleted token field
-      await update();
+      try {
+        await update();
+      } catch (updateErr) {
+        console.warn("NextAuth session update skipped or blocked:", updateErr);
+      }
 
       router.push("/dashboard");
       router.refresh();

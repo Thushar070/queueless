@@ -31,6 +31,25 @@ export default function RootLayout({
                   document.documentElement.classList.remove('dark');
                 }
               } catch (_) {}
+
+              try {
+                const originalReplace = window.history.replaceState;
+                window.history.replaceState = function(...args) {
+                  try {
+                    return originalReplace.apply(this, args);
+                  } catch (e) {
+                    console.warn("history.replaceState blocked by browser context:", e);
+                  }
+                };
+                const originalPush = window.history.pushState;
+                window.history.pushState = function(...args) {
+                  try {
+                    return originalPush.apply(this, args);
+                  } catch (e) {
+                    console.warn("history.pushState blocked by browser context:", e);
+                  }
+                };
+              } catch (_) {}
             `
           }}
         />

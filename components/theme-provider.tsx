@@ -18,9 +18,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme") as Theme;
-      if (savedTheme) {
-        setThemeState(savedTheme);
+      try {
+        const savedTheme = localStorage.getItem("theme") as Theme;
+        if (savedTheme) {
+          setThemeState(savedTheme);
+        }
+      } catch (e) {
+        console.warn("localStorage access blocked:", e);
       }
     }
     setMounted(true);
@@ -29,7 +33,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     if (typeof window !== "undefined") {
-      localStorage.setItem("theme", newTheme);
+      try {
+        localStorage.setItem("theme", newTheme);
+      } catch (e) {
+        console.warn("localStorage access blocked:", e);
+      }
     }
   };
 
