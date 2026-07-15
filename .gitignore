@@ -45,4 +45,6 @@ next-env.d.ts
 /plan
 /docs
 /tests
+AGENTS.md
+CLAUDE.md
 
