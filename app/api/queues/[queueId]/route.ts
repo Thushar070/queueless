@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { QueueService } from "@/lib/services/queue-service";
 import { ZodError } from "zod";
+import { UserRole } from "@prisma/client";
 
 interface RouteContext {
   params: Promise<{ queueId: string }>;
@@ -23,7 +24,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = await request.json();
 
     if (body.action === "toggle") {
-      const updated = await QueueService.toggleQueueStatus(session.user.businessId, queueId);
+      const updated = await QueueService.toggleQueueStatus(
+        session.user.businessId,
+        queueId,
+        { id: session.user.id, role: session.user.role as UserRole }
+      );
       return NextResponse.json(updated);
     }
 
@@ -59,7 +64,11 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
 
     const { queueId } = await context.params;
-    const deleted = await QueueService.deleteQueue(session.user.businessId, queueId);
+    const deleted = await QueueService.deleteQueue(
+      session.user.businessId,
+      queueId,
+      { id: session.user.id, role: session.user.role as UserRole }
+    );
 
     return NextResponse.json(deleted);
   } catch (error: unknown) {

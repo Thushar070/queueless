@@ -9,6 +9,7 @@ import {
   UpdateQueueInput,
 } from "@/lib/validation/queue";
 import { QueueEntryService } from "./queue-entry-service";
+import { NotificationService } from "./notification-service";
 
 export class QueueService {
   /**
@@ -124,7 +125,11 @@ export class QueueService {
   /**
    * Toggles the queue status between OPEN and CLOSED.
    */
-  static async toggleQueueStatus(businessId: string, queueId: string) {
+  static async toggleQueueStatus(
+    businessId: string,
+    queueId: string,
+    actor: { id: string | null; role: UserRole | null } = { id: null, role: null }
+  ) {
     // Verify ownership
     const existing = await prisma.queue.findFirst({
       where: { id: queueId, businessId },
@@ -135,16 +140,26 @@ export class QueueService {
 
     const newStatus = existing.status === "OPEN" ? "CLOSED" : "OPEN";
 
-    return await prisma.queue.update({
+    const updatedQueue = await prisma.queue.update({
       where: { id: queueId },
       data: { status: newStatus },
     });
+
+    if (newStatus === "CLOSED") {
+      await this.massCancelWaitingEntries(queueId, actor);
+    }
+
+    return updatedQueue;
   }
 
   /**
    * Soft-deletes a queue by setting its deletedAt timestamp.
    */
-  static async deleteQueue(businessId: string, queueId: string) {
+  static async deleteQueue(
+    businessId: string,
+    queueId: string,
+    actor: { id: string | null; role: UserRole | null } = { id: null, role: null }
+  ) {
     // Verify ownership
     const existing = await prisma.queue.findFirst({
       where: { id: queueId, businessId },
@@ -153,10 +168,49 @@ export class QueueService {
       throw new Error("Queue not found or unauthorized");
     }
 
-    return await prisma.queue.update({
+    const updated = await prisma.queue.update({
       where: { id: queueId },
       data: { deletedAt: new Date() },
     });
+
+    await this.massCancelWaitingEntries(queueId, actor);
+
+    return updated;
+  }
+
+  /**
+   * Mass cancels all WAITING entries for a queue and schedules QUEUE_CANCELLED notifications.
+   */
+  static async massCancelWaitingEntries(
+    queueId: string,
+    actor: { id: string | null; role: UserRole | null }
+  ): Promise<void> {
+    const cancelledEntryIds: string[] = [];
+
+    await this.withQueueLock(queueId, async (tx) => {
+      const waitingEntries = await tx.queueEntry.findMany({
+        where: {
+          queueId,
+          status: QueueEntryStatus.WAITING,
+        },
+      });
+
+      for (const entry of waitingEntries) {
+        await QueueEntryService.transition(
+          entry.id,
+          QueueEntryStatus.CANCELLED,
+          actor,
+          tx
+        );
+        cancelledEntryIds.push(entry.id);
+      }
+    });
+
+    for (const entryId of cancelledEntryIds) {
+      NotificationService.sendNotification(entryId, "QUEUE_CANCELLED").catch((err) => {
+        console.error("Async QUEUE_CANCELLED notification trigger failed:", err);
+      });
+    }
   }
 
   /**
@@ -202,7 +256,9 @@ export class QueueService {
     queueId: string,
     fn: (tx: Prisma.TransactionClient) => Promise<T>
   ): Promise<T> {
-    return await prisma.$transaction(
+    const notifyThreeAwayIds: string[] = [];
+
+    const result = await prisma.$transaction(
       async (tx) => {
         // 1. Lock the parent Queue row to serialize operations on empty queues
         await tx.$executeRaw`
@@ -215,22 +271,28 @@ export class QueueService {
         `;
 
         // 3. Execute the payload mutation
-        const result = await fn(tx);
+        const res = await fn(tx);
 
         // 4. Recalculate positions for all remaining WAITING rows sequentially (1..N)
         const activeEntries = await tx.queueEntry.findMany({
-        where: {
-          queueId,
-          status: QueueEntryStatus.WAITING,
-        },
-        orderBy: [
-          { position: "asc" },
-          { joinedAt: "asc" },
-        ],
-      });
+          where: {
+            queueId,
+            status: QueueEntryStatus.WAITING,
+          },
+          orderBy: [
+            { position: "asc" },
+            { joinedAt: "asc" },
+          ],
+        });
 
         for (let i = 0; i < activeEntries.length; i++) {
           const newPos = i + 1;
+          const oldPos = activeEntries[i].position;
+
+          if (newPos === 3 && oldPos > 3 && !activeEntries[i].threeAwayNotifiedAt) {
+            notifyThreeAwayIds.push(activeEntries[i].id);
+          }
+
           if (activeEntries[i].position !== newPos) {
             await tx.queueEntry.update({
                where: { id: activeEntries[i].id },
@@ -239,13 +301,22 @@ export class QueueService {
           }
         }
 
-        return result;
+        return res;
       },
       {
         maxWait: 25000, // 25 seconds wait time for connection pool
         timeout: 45000, // 45 seconds transaction timeout
       }
     );
+
+    // Asynchronously send THREE_AWAY notifications after transaction commits
+    for (const entryId of notifyThreeAwayIds) {
+      NotificationService.sendNotification(entryId, "THREE_AWAY").catch((err) => {
+        console.error("Async THREE_AWAY notification trigger failed:", err);
+      });
+    }
+
+    return result;
   }
 
   /**
@@ -255,7 +326,7 @@ export class QueueService {
     queueId: string,
     input: { customerName: string; customerPhone: string; customerEmail?: string | null }
   ) {
-    return await this.withQueueLock(queueId, async (tx) => {
+    const entry = await this.withQueueLock(queueId, async (tx) => {
       // 1. Verify Queue exists and is open
       const queue = await tx.queue.findFirst({
         where: { id: queueId, deletedAt: null },
@@ -317,6 +388,13 @@ export class QueueService {
         },
       });
     });
+
+    // Send JOINED notification asynchronously after transaction commits
+    NotificationService.sendNotification(entry.id, "JOINED").catch((err) => {
+      console.error("Async JOINED notification trigger failed:", err);
+    });
+
+    return entry;
   }
 
   /**
@@ -355,7 +433,7 @@ export class QueueService {
     queueId: string,
     actor: { id: string; role: UserRole }
   ) {
-    return await this.withQueueLock(queueId, async (tx) => {
+    const entry = await this.withQueueLock(queueId, async (tx) => {
       // 1. Verify queue ownership
       const queue = await tx.queue.findFirst({
         where: { id: queueId, businessId, deletedAt: null },
@@ -381,6 +459,13 @@ export class QueueService {
         tx
       );
     });
+
+    // Send YOUR_TURN notification asynchronously after transaction commits
+    NotificationService.sendNotification(entry.id, "YOUR_TURN").catch((err) => {
+      console.error("Async YOUR_TURN notification trigger failed:", err);
+    });
+
+    return entry;
   }
 
   /**
@@ -392,7 +477,7 @@ export class QueueService {
     entryId: string,
     actor: { id: string; role: UserRole }
   ) {
-    return await this.withQueueLock(queueId, async (tx) => {
+    const entry = await this.withQueueLock(queueId, async (tx) => {
       // 1. Verify queue ownership
       const queue = await tx.queue.findFirst({
         where: { id: queueId, businessId, deletedAt: null },
@@ -416,6 +501,13 @@ export class QueueService {
         tx
       );
     });
+
+    // Send YOUR_TURN notification asynchronously after transaction commits
+    NotificationService.sendNotification(entry.id, "YOUR_TURN").catch((err) => {
+      console.error("Async YOUR_TURN notification trigger failed:", err);
+    });
+
+    return entry;
   }
 
   /**

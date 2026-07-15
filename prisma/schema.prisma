@@ -112,6 +112,7 @@ model QueueEntry {
   servingAt     DateTime?
   completedAt   DateTime?
   cancelledAt   DateTime?
+  threeAwayNotifiedAt DateTime?
 
   @@index([queueId, status])
   @@index([businessId])
