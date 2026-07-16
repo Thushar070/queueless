@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import twilio from "twilio";
+import { HermesRelayService } from "./hermes-relay-service";
 
 export type NotificationType = "JOINED" | "THREE_AWAY" | "YOUR_TURN" | "QUEUE_CANCELLED";
 
@@ -64,35 +64,25 @@ export class NotificationService {
           return;
       }
 
-      const twilioEnabled = process.env.TWILIO_ENABLED === "true";
+      const smsEnabled = process.env.SMS_ENABLED === "true";
       let status: "SENT" | "FAILED" | "MOCKED" = "MOCKED";
       let providerRef: string | null = null;
 
-      // 3. Handle sending based on Twilio config
-      if (twilioEnabled) {
-        const accountSid = process.env.TWILIO_ACCOUNT_SID;
-        const authToken = process.env.TWILIO_AUTH_TOKEN;
-        const fromNumber = process.env.TWILIO_FROM_NUMBER;
-
-        if (!accountSid || !authToken || !fromNumber) {
-          console.error("[NotificationService] Missing Twilio environment configuration.");
-          status = "FAILED";
-          providerRef = "Missing configuration variables";
-        } else {
-          try {
-            const client = twilio(accountSid, authToken);
-            const message = await client.messages.create({
-              body,
-              from: fromNumber,
-              to: entry.customerPhone,
-            });
+      // 3. Handle sending based on SMS config
+      if (smsEnabled) {
+        try {
+          const result = await HermesRelayService.sendSms(entry.customerPhone, body);
+          if (result.success) {
             status = "SENT";
-            providerRef = message.sid;
-          } catch (twilioErr: unknown) {
-            console.error("[NotificationService] Twilio API send error:", twilioErr);
+            providerRef = result.providerRef || "HERMES_OK";
+          } else {
             status = "FAILED";
-            providerRef = twilioErr instanceof Error ? twilioErr.message : "Twilio error";
+            providerRef = result.error || "Hermes relay error";
           }
+        } catch (smsErr: unknown) {
+          console.error("[NotificationService] SMS send error:", smsErr);
+          status = "FAILED";
+          providerRef = smsErr instanceof Error ? smsErr.message : "SMS error";
         }
       }
 

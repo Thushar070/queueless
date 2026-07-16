@@ -8,6 +8,7 @@ declare module "next-auth" {
       role: string;
       mustChangePassword?: boolean;
       profileCompleted?: boolean;
+      phoneVerified?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -16,6 +17,7 @@ declare module "next-auth" {
     role: string;
     mustChangePassword?: boolean;
     profileCompleted?: boolean;
+    phoneVerified?: boolean;
   }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     role: string;
     mustChangePassword?: boolean;
     profileCompleted?: boolean;
+    phoneVerified?: boolean;
   }
 }

@@ -27,6 +27,9 @@ export default withAuth(
       if (token?.profileCompleted === false) {
         return NextResponse.redirect(new URL("/onboarding/profile", req.url));
       }
+      if (token?.phoneVerified === false) {
+        return NextResponse.redirect(new URL("/onboarding/verify-phone", req.url));
+      }
     }
 
     // 3. Guard for /onboarding/* -> Requires businessId

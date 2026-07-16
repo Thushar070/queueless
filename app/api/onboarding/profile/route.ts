@@ -3,9 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { HermesRelayService } from "@/lib/services/hermes-relay-service";
 
 const profileSchema = z.object({
-  phone: z.string().min(6, "Phone number must be at least 6 characters").max(20),
+  phone: z.string().refine((val) => {
+    return HermesRelayService.validateAndNormalizePhone(val) !== null;
+  }, {
+    message: "Invalid Indian mobile number. Must be a 10-digit number starting with 6-9, optionally prefixed with +91 or 91.",
+  }),
   address: z.string().min(5, "Address must be at least 5 characters").max(200),
   category: z.string().min(2, "Category must be at least 2 characters").max(50),
 });
@@ -28,12 +33,13 @@ export async function POST(request: Request) {
     }
 
     const { phone, address, category } = result.data;
+    const normalizedPhone = HermesRelayService.validateAndNormalizePhone(phone)!;
 
     // Update the business profile details
     await prisma.business.update({
       where: { id: session.user.businessId },
       data: {
-        phone: phone.trim(),
+        phone: normalizedPhone,
         address: address.trim(),
         category: category.trim(),
         profileCompleted: true,

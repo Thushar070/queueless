@@ -124,12 +124,14 @@ export const authOptions: NextAuthOptions = {
             token.businessId = record.data.businessId;
             token.mustChangePassword = record.data.mustChangePassword;
             token.profileCompleted = record.data.business?.profileCompleted ?? false;
+            token.phoneVerified = !!record.data.business?.phoneVerifiedAt;
           } else if (record?.type === "admin") {
             token.id = record.data.id;
             token.role = "SUPER_ADMIN";
             token.businessId = null;
             token.mustChangePassword = false;
             token.profileCompleted = true;
+            token.phoneVerified = true;
           } else {
             // Invalidate session immediately if staff member was soft-deleted/not found
             token.id = "";
@@ -137,6 +139,7 @@ export const authOptions: NextAuthOptions = {
             token.businessId = null;
             token.mustChangePassword = undefined;
             token.profileCompleted = false;
+            token.phoneVerified = false;
           }
         } catch (error) {
           console.error("Error in jwt callback database query:", error);
@@ -152,6 +155,7 @@ export const authOptions: NextAuthOptions = {
         session.user.businessId = token.businessId;
         session.user.mustChangePassword = token.mustChangePassword;
         session.user.profileCompleted = token.profileCompleted;
+        session.user.phoneVerified = token.phoneVerified;
       }
       return session;
     },

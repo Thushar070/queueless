@@ -8,7 +8,12 @@ import { z } from "zod";
 import { useSession } from "next-auth/react";
 
 const profileSchema = z.object({
-  phone: z.string().min(6, "Phone number must be at least 6 characters").max(20),
+  phone: z.string().refine((val) => {
+    const cleaned = val.replace(/\s+/g, "").replace(/[-\(\)]/g, "");
+    return /^[6-9]\d{9}$/.test(cleaned) || /^\+91[6-9]\d{9}$/.test(cleaned) || /^91[6-9]\d{9}$/.test(cleaned);
+  }, {
+    message: "Invalid Indian mobile number (e.g. 9876543210 or +919876543210).",
+  }),
   address: z.string().min(5, "Address must be at least 5 characters").max(200),
   category: z.string().min(2, "Category must be at least 2 characters").max(50),
 });
@@ -87,7 +92,7 @@ export default function OnboardProfileForm() {
         <input
           id="phone"
           type="text"
-          placeholder="+15555555555"
+          placeholder="+919876543210"
           {...register("phone")}
           className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
         />

@@ -40,6 +40,7 @@ model Business {
   slug              String         @unique
   email             String         @unique
   phone             String?
+  phoneVerifiedAt   DateTime?
   status            BusinessStatus @default(ACTIVE)
   subscription      String?        // e.g. "FREE" | "PRO" — informational only, no billing enforced
   workingHoursStart String?        // "09:00", nullable = no restriction
@@ -168,5 +169,19 @@ model Section {
   queues     Queue[]
 
   @@unique([businessId, name])
+  @@index([businessId])
+}
+
+model PhoneVerification {
+  id          String   @id @default(cuid())
+  businessId  String
+  phone       String   // normalized E.164 (+91XXXXXXXXXX)
+  codeHash    String   // cryptographically hashed OTP code
+  attempts    Int      @default(0) // verify attempts counter
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([phone])
   @@index([businessId])
 }
