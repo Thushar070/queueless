@@ -151,14 +151,15 @@ export async function POST(request: Request) {
           status: "success",
         });
         successCount++;
-      } catch (rowErr: any) {
+      } catch (rowErr: unknown) {
         console.error(`Error importing row ${i + 1}:`, rowErr);
+        const errMsg = rowErr instanceof Error ? rowErr.message : "Database write error";
         results.push({
           row: i + 1,
           name,
           email: normalizedEmail,
           status: "error",
-          error: rowErr.message || "Database write error",
+          error: errMsg,
         });
         errorCount++;
       }

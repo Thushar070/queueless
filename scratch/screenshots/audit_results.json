@@ -1,0 +1,97 @@
+[
+  {
+    "step": "Public Landing Page",
+    "status": "PASS",
+    "details": "Loaded successfully with headline and navigation buttons.",
+    "screenshot": "step2_1_landing_desktop.png"
+  },
+  {
+    "step": "Public Signup Page",
+    "status": "PASS",
+    "details": "Signup selection card renders cleanly.",
+    "screenshot": "step2_1_signup_desktop.png"
+  },
+  {
+    "step": "Business Signup Form",
+    "status": "PASS",
+    "details": "Business registration form fields render cleanly.",
+    "screenshot": "step2_1_signup_biz_desktop.png"
+  },
+  {
+    "step": "Login Page",
+    "status": "PASS",
+    "details": "Credentials and Google OAuth login options rendered.",
+    "screenshot": "step2_1_login_desktop.png"
+  },
+  {
+    "step": "Login Authentication Flow",
+    "status": "PASS",
+    "details": "Successfully logged in and redirected to http://localhost:3000/dashboard.",
+    "screenshot": "step2_2_after_login.png"
+  },
+  {
+    "step": "Queue Management Dashboard",
+    "status": "PASS",
+    "details": "Queues dashboard rendered seed queue \"VIP Express Queue\" with status OPEN.",
+    "screenshot": "step2_3_queues_list.png"
+  },
+  {
+    "step": "QR Code Rendering Check",
+    "status": "PASS",
+    "details": "Found 1 valid rendered QR base64 image(s) with natural width > 0.",
+    "screenshot": "step2_3_qr_codes_page.png"
+  },
+  {
+    "step": "Dashboard Sections Page",
+    "status": "PASS",
+    "details": "Sections page rendered.",
+    "screenshot": "step2_3_sections_page.png"
+  },
+  {
+    "step": "Dashboard Staff Management Page",
+    "status": "PASS",
+    "details": "Staff page rendered.",
+    "screenshot": "step2_3_staff_page.png"
+  },
+  {
+    "step": "Dashboard Settings Page",
+    "status": "PASS",
+    "details": "Settings page rendered.",
+    "screenshot": "step2_3_settings_page.png"
+  },
+  {
+    "step": "Customer Queue Join & Redirect",
+    "status": "PASS",
+    "details": "Joined queue successfully. Redirected to /track/1f2351d7-0db0-4fe3-a41e-4beea34f91a0",
+    "screenshot": "step2_4_customer_tracking_page.png"
+  },
+  {
+    "step": "Realtime Live Position Update",
+    "status": "PASS",
+    "details": "Customer tracking page updated automatically without manual refresh.",
+    "screenshot": "step2_5_customer_after_realtime_call.png"
+  },
+  {
+    "step": "Dashboard Analytics Page",
+    "status": "PASS",
+    "details": "Analytics page rendered.",
+    "screenshot": "step2_6_analytics_page.png"
+  },
+  {
+    "step": "Dashboard Audit Logs Page",
+    "status": "PASS",
+    "details": "Audit logs page rendered.",
+    "screenshot": "step2_6_audit_logs_page.png"
+  },
+  {
+    "step": "Super Admin Portal",
+    "status": "PASS",
+    "details": "Loaded business list and controls.",
+    "screenshot": "step2_7_admin_businesses.png"
+  },
+  {
+    "step": "Responsiveness Screenshots Audit",
+    "status": "PASS",
+    "details": "Captured mobile (375px), tablet (768px), and desktop (1280px) screenshots for key routes."
+  }
+]

@@ -89,7 +89,7 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
             <FileSpreadsheet className="size-5 text-muted-foreground" />
             <div>
               <h3 className="font-heading font-extrabold text-base">Bulk Import Staff</h3>
-              <p className="text-[10px] text-muted-foreground">Upload CSV file with "name", "email", and "role" columns</p>
+              <p className="text-[10px] text-muted-foreground">Upload CSV file with &quot;name&quot;, &quot;email&quot;, and &quot;role&quot; columns</p>
             </div>
           </div>
           <button

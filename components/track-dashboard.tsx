@@ -99,16 +99,19 @@ export default function TrackDashboard({
     };
   }, [entry.id, supabaseUrl, supabaseAnonKey]);
 
-  // 2. Poll fallback (every 10s) triggered if live socket is disconnected
+  // 2. Heartbeat polling (every 5s) to guarantee live position updates even if WebSocket drops or misses events
   useEffect(() => {
-    if (isConnected) return;
+    // Poll every 5s if active or waiting
+    if (entry.status === "COMPLETED" || entry.status === "CANCELLED" || entry.status === "SKIPPED") {
+      return;
+    }
 
     const interval = setInterval(async () => {
       await refetchEntry();
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [isConnected, refetchEntry]);
+  }, [entry.status, refetchEntry]);
 
   // 3. One-time authoritative refetch on browser reconnect or tab visibility regain
   useEffect(() => {

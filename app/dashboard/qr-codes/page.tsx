@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 
 interface Queue {
   id: string;
@@ -13,7 +12,6 @@ interface Queue {
 }
 
 export default function QrCodesPage() {
-  const { data: session } = useSession();
   const [queues, setQueues] = useState<Queue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

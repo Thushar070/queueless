@@ -34,10 +34,16 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
     const message = error instanceof Error ? error.message : "Internal server error";
-    // Check for duplicate or capacity errors
-    if (message === "You are already in this queue" || message === "Queue capacity limit has been reached" || message === "Queue is closed") {
+    // Check for user-facing domain errors
+    if (
+      message === "You are already in this queue" ||
+      message === "Queue capacity limit has been reached" ||
+      message === "Queue is closed" ||
+      message.startsWith("closed") ||
+      message === "Business is suspended"
+    ) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -5,13 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  Layers,
   BarChart3,
   History,
   LogOut,
   Menu,
   X,
-  HelpCircle,
   ShieldCheck,
   Building
 } from "lucide-react";

@@ -37,8 +37,9 @@ export default function SectionsPage() {
       const data = await res.json();
       setSections(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || "An error occurred while loading sections.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred while loading sections.";
+      setError(message);
     } finally {
       if (showLoading) {
         setLoading(false);
@@ -47,11 +48,35 @@ export default function SectionsPage() {
   };
 
   useEffect(() => {
+    let active = true;
     if (status === "unauthenticated") {
       router.push("/login");
     } else if (status === "authenticated") {
-      fetchSections(true);
+      const load = async () => {
+        try {
+          const res = await fetch("/api/sections");
+          if (!res.ok) throw new Error("Failed to fetch sections");
+          const data = await res.json();
+          if (active) {
+            setSections(data);
+            setError(null);
+          }
+        } catch (err: unknown) {
+          if (active) {
+            const message = err instanceof Error ? err.message : "An error occurred while loading sections.";
+            setError(message);
+          }
+        } finally {
+          if (active) {
+            setLoading(false);
+          }
+        }
+      };
+      load();
     }
+    return () => {
+      active = false;
+    };
   }, [status, router]);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -78,8 +103,9 @@ export default function SectionsPage() {
       setName("");
       setIsCreateOpen(false);
       fetchSections();
-    } catch (err: any) {
-      setError(err.message || "Failed to connect to the server.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to connect to the server.";
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -109,8 +135,9 @@ export default function SectionsPage() {
       setEditingSection(null);
       setEditName("");
       fetchSections();
-    } catch (err: any) {
-      setError(err.message || "Failed to connect to the server.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to connect to the server.";
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,8 +160,9 @@ export default function SectionsPage() {
       }
 
       fetchSections();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete section";
+      setError(message);
     }
   };
 

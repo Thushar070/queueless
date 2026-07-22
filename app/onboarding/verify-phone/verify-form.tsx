@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent } from "react";
+import { useState, useRef, useEffect, useCallback, KeyboardEvent, ClipboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -29,20 +29,7 @@ export default function VerifyPhoneForm({ businessPhone }: VerifyPhoneFormProps)
     return phone;
   };
 
-  // Automatically send OTP code on component mount
-  useEffect(() => {
-    sendOtp();
-  }, []);
-
-  // Handle countdown timer
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
-
-  const sendOtp = async () => {
+  const sendOtp = useCallback(async () => {
     if (sending || countdown > 0) return;
     setSending(true);
     setError(null);
@@ -62,7 +49,40 @@ export default function VerifyPhoneForm({ businessPhone }: VerifyPhoneFormProps)
     } finally {
       setSending(false);
     }
-  };
+  }, [sending, countdown]);
+
+  // Automatically send OTP code on component mount
+  useEffect(() => {
+    let active = true;
+    const requestInitial = async () => {
+      try {
+        const res = await fetch("/api/onboarding/verify-phone/request", {
+          method: "POST",
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (active) setError(data.error || "Failed to send verification code. Please check your network.");
+        } else {
+          if (active) setCountdown(60);
+        }
+      } catch (err) {
+        console.error(err);
+        if (active) setError("An unexpected error occurred while sending code.");
+      }
+    };
+    requestInitial();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Handle countdown timer
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const handleInputChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return; // only allow numbers

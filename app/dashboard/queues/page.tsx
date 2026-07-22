@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createQueueSchema, CreateQueueInput } from "@/lib/validation/queue";
+import { createQueueSchema, CreateQueueInput, UpdateQueueInput } from "@/lib/validation/queue";
 import { z } from "zod";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 
 interface Queue {
   id: string;
@@ -28,7 +27,6 @@ interface Section {
 }
 
 export default function QueuesPage() {
-  const { data: session } = useSession();
   const [queues, setQueues] = useState<Queue[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +44,7 @@ export default function QueuesPage() {
     reset,
     setValue,
     formState: { errors },
-  } = useForm<z.input<typeof createQueueSchema>>({
+  } = useForm({
     resolver: zodResolver(createQueueSchema),
     defaultValues: {
       name: "",
@@ -125,7 +123,7 @@ export default function QueuesPage() {
     };
   }, []);
 
-  const onCreateSubmit = async (data: any) => {
+  const onCreateSubmit = async (data: z.infer<typeof createQueueSchema>) => {
     setIsSubmitting(true);
     setError(null);
     try {
@@ -155,7 +153,7 @@ export default function QueuesPage() {
     }
   };
 
-  const onEditSubmit = async (data: any) => {
+  const onEditSubmit = async (data: z.infer<typeof createQueueSchema>) => {
     if (!editingQueue) return;
     setIsSubmitting(true);
     setError(null);

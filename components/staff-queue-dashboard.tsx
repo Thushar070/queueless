@@ -10,8 +10,7 @@ import {
   Play,
   Check,
   ArrowUp,
-  TrendingUp,
-  AlertTriangle
+  TrendingUp
 } from "lucide-react";
 
 interface SerializedEntry {
