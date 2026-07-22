@@ -2,15 +2,26 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlError = params.get("error");
+      if (urlError === "AccessDenied") {
+        return "Access denied. Please check your credentials or contact administrator.";
+      } else if (urlError === "OAuthAccountNotLinked") {
+        return "To confirm your identity, sign in with the same account you used originally.";
+      } else if (urlError) {
+        return `Authentication error: ${urlError}`;
+      }
+    }
+    return null;
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +38,7 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Invalid email or password");
       } else {
-        router.push("/dashboard");
-        router.refresh();
+        window.location.assign("/dashboard");
       }
     } catch (err) {
       console.error(err);

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,7 +20,6 @@ const profileSchema = z.object({
 type ProfileInput = z.infer<typeof profileSchema>;
 
 export default function OnboardProfileForm() {
-  const router = useRouter();
   const { update } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,8 +62,7 @@ export default function OnboardProfileForm() {
         console.warn("NextAuth session update skipped or blocked:", updateErr);
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      window.location.assign("/dashboard");
     } catch (err) {
       console.error(err);
       setError("An unexpected network error occurred.");

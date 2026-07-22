@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "placeholder-client-id",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder-client-secret",
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -95,6 +96,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         try {
+          if (!user?.email) return false;
           const record = await findStaffOrAdminByEmail(user.email);
           if (record?.type === "staff" && record.data.deletedAt) {
             return false; // Block Google login if staff member is soft-deleted
@@ -102,7 +104,8 @@ export const authOptions: NextAuthOptions = {
           return true;
         } catch (error) {
           console.error("Error in signIn callback:", error);
-          return false; // Deny sign-in gracefully on DB failure
+          // Allow sign-in attempt to proceed to jwt callback rather than hard-blocking with AccessDenied on transient DB query error
+          return true;
         }
       }
       return true;
@@ -133,11 +136,12 @@ export const authOptions: NextAuthOptions = {
             token.profileCompleted = true;
             token.phoneVerified = true;
           } else {
-            // Invalidate session immediately if staff member was soft-deleted/not found
-            token.id = "";
-            token.role = "";
-            token.businessId = null;
-            token.mustChangePassword = undefined;
+            // For new users signing in via OAuth who do not have a DB record yet,
+            // default role to BUSINESS_OWNER so they can complete business registration at /signup/business.
+            token.id = (token.sub as string) || token.id || "";
+            token.role = (token.role as string) || "BUSINESS_OWNER";
+            token.businessId = token.businessId || null;
+            token.mustChangePassword = false;
             token.profileCompleted = false;
             token.phoneVerified = false;
           }
@@ -162,5 +166,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
 };

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, ChangeEvent, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 interface OnboardBusinessFormProps {
@@ -15,7 +14,6 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [host, setHost] = useState("queueless.com");
-  const router = useRouter();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -67,8 +65,7 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
       }
 
       await update();
-      router.refresh();
-      router.push("/dashboard");
+      window.location.assign("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent, ClipboardEvent } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 interface VerifyPhoneFormProps {
@@ -9,7 +8,6 @@ interface VerifyPhoneFormProps {
 }
 
 export default function VerifyPhoneForm({ businessPhone }: VerifyPhoneFormProps) {
-  const router = useRouter();
   const { update } = useSession();
   const [code, setCode] = useState<string[]>(new Array(6).fill(""));
   const [sending, setSending] = useState(false);
@@ -159,8 +157,7 @@ export default function VerifyPhoneForm({ businessPhone }: VerifyPhoneFormProps)
           console.warn("Session update warning:", updateErr);
         }
         setTimeout(() => {
-          router.push("/dashboard");
-          router.refresh();
+          window.location.assign("/dashboard");
         }, 1500);
       }
     } catch (err) {
