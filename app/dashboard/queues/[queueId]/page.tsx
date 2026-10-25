@@ -64,9 +64,6 @@ export default async function QueueDetailPage({ params }: QueueDetailPageProps) 
     servingAt: entry.servingAt ? entry.servingAt.toISOString() : null,
   }));
 
-  const supabaseUrl = process.env.SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
-
   return (
     <div className="space-y-6">
       {/* Simple Navigation back to Queues */}
@@ -83,8 +80,6 @@ export default async function QueueDetailPage({ params }: QueueDetailPageProps) 
         queueId={queueId}
         queueName={queue.name}
         initialEntries={serializedEntries}
-        supabaseUrl={supabaseUrl}
-        supabaseAnonKey={supabaseAnonKey}
         qrCodeUrl={queue.qrCodeUrl}
       />
     </div>

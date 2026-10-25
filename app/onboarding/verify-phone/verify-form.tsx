@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent, ClipboardEvent } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface VerifyPhoneFormProps {
   businessPhone: string;
@@ -9,6 +10,7 @@ interface VerifyPhoneFormProps {
 
 export default function VerifyPhoneForm({ businessPhone }: VerifyPhoneFormProps) {
   const { update } = useSession();
+  const router = useRouter();
   const [code, setCode] = useState<string[]>(new Array(6).fill(""));
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -157,7 +159,7 @@ export default function VerifyPhoneForm({ businessPhone }: VerifyPhoneFormProps)
           console.warn("Session update warning:", updateErr);
         }
         setTimeout(() => {
-          window.location.assign("/dashboard");
+          router.push("/dashboard");
         }, 1500);
       }
     } catch (err) {

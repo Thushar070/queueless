@@ -3,6 +3,37 @@ import autocannon from "autocannon";
 import { spawn } from "child_process";
 import { resolve } from "path";
 import fs from "fs";
+import type { ChildProcess } from "child_process";
+
+const waitForJoinNotifications = async (queueId: string): Promise<void> => {
+  const entries = await prisma.queueEntry.findMany({
+    where: { queueId },
+    select: { id: true },
+  });
+  if (entries.length === 0) return;
+
+  const entryIds = entries.map((entry) => entry.id);
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const completed = await prisma.notification.count({
+      where: { queueEntryId: { in: entryIds }, type: "JOINED" },
+    });
+    if (completed >= entries.length) {
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 250));
+      return;
+    }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+  }
+
+  throw new Error("Timed out waiting for asynchronous join notifications to finish");
+};
+
+const stopServerProcess = async (serverProcess: ChildProcess): Promise<void> => {
+  if (serverProcess.exitCode !== null || serverProcess.signalCode !== null) return;
+  await new Promise<void>((resolveExit) => {
+    serverProcess.once("exit", () => resolveExit());
+    if (!serverProcess.kill("SIGTERM")) resolveExit();
+  });
+};
 
 async function run() {
   console.log("=== Phase 10 Load-Test Orchestrator ===");
@@ -32,10 +63,10 @@ async function run() {
 
   // 2. Start the production Next.js server in the background
   console.log("Starting Next.js production server on port 3005...");
-  const serverProcess = spawn("npx", ["next", "start", "-p", "3005"], {
+  const serverProcess = spawn(process.execPath, [resolve(__dirname, "../node_modules/next/dist/bin/next"), "start", "-p", "3005"], {
     cwd: resolve(__dirname, ".."),
     stdio: "pipe",
-    env: { ...process.env, PORT: "3005" },
+    env: { ...process.env, PORT: "3005", SMS_ENABLED: "false" },
   });
 
   // Wait for the server to spin up and bind to port 3005
@@ -63,15 +94,16 @@ async function run() {
   // 3. Configure autocannon with dynamic payload bodies (concurrency = 20)
   const url = `http://localhost:3005/api/queues/${testQueue.id}/join`;
   console.log(`Targeting join API: ${url}`);
-  console.log("Executing autocannon load-test (Concurrency: 20, Duration: 10s)...");
+  console.log("Executing autocannon load-test (Concurrency: 20, Requests: 500)...");
 
   try {
+    let requestNumber = 0;
     const result = await new Promise<autocannon.Result>((resolveTest, rejectTest) => {
       const instance = autocannon(
         {
           url,
           connections: 20,
-          duration: 10,
+          amount: 500,
           requests: [
             {
               method: "POST",
@@ -80,12 +112,12 @@ async function run() {
                 "content-type": "application/json",
               },
               setupRequest: (req: autocannon.Request) => {
-                const randSuffix = Math.floor(1000000 + Math.random() * 9000000);
-                const phone = `+1555${randSuffix}`;
+                // Avoid random collisions being counted as join failures.
+                const phone = `+1555${String(++requestNumber).padStart(7, "0")}`;
                 req.body = JSON.stringify({
-                  customerName: `LoadTestUser_${randSuffix}`,
+                  customerName: `LoadTestUser_${requestNumber}`,
                   customerPhone: phone,
-                  customerEmail: `loadtest_${randSuffix}@queueless.com`,
+                  customerEmail: `loadtest_${requestNumber}@queueless.com`,
                 });
                 return req;
               },
@@ -118,14 +150,15 @@ async function run() {
   } catch (err) {
     console.error("Load test failed to execute:", err);
   } finally {
+    try {
+      await waitForJoinNotifications(testQueue.id);
+    } catch (notificationError) {
+      console.error("Notification work did not drain before cleanup:", notificationError);
+    }
+
     // 5. Cleanup Next.js server
     console.log("Shutting down Next.js server...");
-    serverProcess.kill("SIGKILL");
-    await new Promise<void>((resolveExit) => {
-      serverProcess.on("exit", () => {
-        resolveExit();
-      });
-    });
+    await stopServerProcess(serverProcess);
     console.log("Next.js server terminated.");
 
     // 6. Cleanup seeded records in correct dependency order with retries for late-committing transactions

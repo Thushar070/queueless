@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // The TypeScript CLI subprocess exits without --showConfig output under Node 24.
+    useTypeScriptCli: false,
+  },
 };
 
 export default nextConfig;

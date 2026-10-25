@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
+function slugifyBusinessName(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-\s]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -78,24 +87,30 @@ export default function SignupPage() {
 
   const handleBusinessNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nameValue = e.target.value;
-    const generatedSlug = nameValue
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9-\s]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
+    const generatedSlug = slugifyBusinessName(nameValue);
+    setFieldErrors((prev) => {
+      if (!prev.businessName) return prev;
+      const next = { ...prev };
+      delete next.businessName;
+      return next;
+    });
+    setError(null);
 
-    setFormData((prev) => ({
-      ...prev,
-      businessName: nameValue,
-      businessSlug: prev.businessSlug === "" || prev.businessSlug === generatedSlug.slice(0, -1)
-        ? generatedSlug
-        : prev.businessSlug,
-    }));
+    setFormData((prev) => {
+      const slugTracksBusinessName =
+        prev.businessSlug === "" ||
+        prev.businessSlug === slugifyBusinessName(prev.businessName);
+
+      return {
+        ...prev,
+        businessName: nameValue,
+        businessSlug: slugTracksBusinessName ? generatedSlug : prev.businessSlug,
+      };
+    });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4 relative overflow-hidden select-none">
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4 relative overflow-hidden">
 
       <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl p-8 relative z-10">
         <div className="text-center mb-6">
@@ -181,7 +196,6 @@ export default function SignupPage() {
                       placeholder="Acme Clinic"
                       value={formData.businessName}
                       onChange={(e) => {
-                        handleChange(e);
                         handleBusinessNameChange(e);
                       }}
                       className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"

@@ -9,9 +9,9 @@ QueueLess is a modern, high-concurrency virtual queue management system built fo
 - **Multi-Tenant Business Architecture**: Complete data isolation across tenants using Prisma ORM & Supabase PostgreSQL Row-Level Security (RLS).
 - **QR Code & Public Join Flow**: Instant QR code generation (Base64 PNG) for every queue. Customers join queues via mobile browser without app downloads.
 - **Atomic Position Assignment & Race Protection**: Serialized position numbers via SQL row locking (`FOR UPDATE`) preventing double-assignment under heavy concurrent joins.
-- **Live Real-time Tracking & Dual Fallback**: Dual-layer position tracking using Supabase Realtime WebSockets backed by automatic 5-second periodic heartbeat polling.
+- **Live Queue Tracking**: Customer and staff dashboards refresh queue data automatically through the API, with no manual refresh required.
 - **SMS & OTP Notifications**: Twilio & Hermes-Relay Android Gateway support for instant SMS alerts (`JOINED`, `YOUR_TURN`, `SERVED`, `CANCELLED`).
-- **Staff Queue Management Dashboard**: Real-time staff desk controls to call next customer, mark serving/completed, re-order positions, or transfer entries across queue sections.
+- **Staff Queue Management Dashboard**: Staff controls to call the next customer, update service status, and reorder waiting customers.
 - **Analytics & Audit Logging**: Store performance metrics (wait times, throughput, peak hours) and immutable platform-wide audit logging.
 - **Super Admin Management Portal**: Platform governance interface to manage business subscriptions, suspend/unsuspend accounts, and view platform metrics.
 
@@ -23,10 +23,16 @@ QueueLess is a modern, high-concurrency virtual queue management system built fo
 - **Language**: TypeScript
 - **Database & ORM**: PostgreSQL & Prisma ORM v7
 - **Authentication**: NextAuth.js (Credentials & Google OAuth)
-- **Realtime**: Supabase Realtime WebSockets & Broadcast Channels
+- **Concurrency Control**: PostgreSQL row locks and Prisma transactions
 - **Validation**: Zod schema validation
 - **Styling**: Tailwind CSS v4 & Lucide React icons
 - **Testing**: Jest unit/integration tests & Playwright browser verification
+
+## Concurrent Queue Operations
+
+Queue joins and staff queue actions run inside PostgreSQL transactions that lock the parent queue row. Joins check queue state, business status, working hours, duplicate customers, capacity, and position while holding that lock. Queue settings and status changes use the same lock, so concurrent requests are serialized across Node.js processes and deployment instances.
+
+The database lock is the synchronization primitive here; an in-memory mutex would only coordinate requests handled by one process and would not protect a multi-instance deployment. The concurrency audit script exercises the same transaction path as production queue actions.
 
 ---
 
@@ -34,7 +40,7 @@ QueueLess is a modern, high-concurrency virtual queue management system built fo
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 24 and npm
 - PostgreSQL database instance running on port 5432 (or Supabase Postgres instance)
 
 ### Setup & Installation

@@ -1,9 +1,56 @@
 import { prisma } from "../lib/prisma";
+import { QueueService } from "../lib/services/queue-service";
 import autocannon from "autocannon";
-import { spawn } from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import { resolve } from "path";
 import fs from "fs";
-import { UserRole } from "@prisma/client";
+import { QueueEntryStatus, UserRole } from "@prisma/client";
+import { QueueEntryService } from "../lib/services/queue-entry-service";
+
+const waitForJoinNotifications = async (queueId: string): Promise<void> => {
+  const entries = await prisma.queueEntry.findMany({
+    where: { queueId },
+    select: { id: true },
+  });
+  if (entries.length === 0) return;
+
+  const entryIds = entries.map((entry) => entry.id);
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const completed = await prisma.notification.count({
+      where: { queueEntryId: { in: entryIds }, type: "JOINED" },
+    });
+    if (completed >= entries.length) {
+      // Let any position-triggered notifications settle before fixture cleanup.
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 250));
+      return;
+    }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+  }
+
+  throw new Error("Timed out waiting for asynchronous join notifications to finish");
+};
+
+const stopServerProcess = async (serverProcess: ChildProcess): Promise<void> => {
+  if (serverProcess.exitCode !== null || serverProcess.signalCode !== null) return;
+  await new Promise<void>((resolveExit) => {
+    serverProcess.once("exit", () => resolveExit());
+    if (!serverProcess.kill("SIGTERM")) resolveExit();
+  });
+};
+
+const cleanupAuditFixtures = async (businessId: string, queueId: string): Promise<void> => {
+  const entries = await prisma.queueEntry.findMany({
+    where: { queueId },
+    select: { id: true },
+  });
+  const entryIds = entries.map((entry) => entry.id);
+  await prisma.notification.deleteMany({ where: { queueEntryId: { in: entryIds } } });
+  await prisma.queueEntry.deleteMany({ where: { queueId } });
+  await prisma.auditLog.deleteMany({ where: { businessId } });
+  await prisma.staff.deleteMany({ where: { businessId } });
+  await prisma.queue.deleteMany({ where: { id: queueId } });
+  await prisma.business.deleteMany({ where: { id: businessId } });
+};
 
 async function run() {
   console.log("=== Phase 11 Concurrency & Database Lock Audit ===");
@@ -44,14 +91,16 @@ async function run() {
 
   // 2. Start Next.js production server on port 3006 in the background
   console.log("Starting Next.js production server on port 3006...");
-  const serverProcess = spawn("npx", ["next", "start", "-p", "3006"], {
+  const serverProcess = spawn(process.execPath, [resolve(__dirname, "../node_modules/next/dist/bin/next"), "start", "-p", "3006"], {
     cwd: resolve(__dirname, ".."),
     stdio: "pipe",
-    env: { ...process.env, PORT: "3006" },
+    env: { ...process.env, PORT: "3006", SMS_ENABLED: "false" },
   });
 
-  await new Promise<void>((resolveSpinUp, rejectSpinUp) => {
+  try {
+    await new Promise<void>((resolveSpinUp, rejectSpinUp) => {
     let output = "";
+    let ready = false;
     const timer = setTimeout(() => {
       rejectSpinUp(new Error("Next.js server failed to spin up in 15 seconds"));
     }, 15000);
@@ -59,15 +108,33 @@ async function run() {
     serverProcess.stdout.on("data", (data) => {
       output += data.toString();
       if (output.includes("Ready in") || output.includes("started server on")) {
+        ready = true;
         clearTimeout(timer);
         resolveSpinUp();
+      }
+    });
+
+    serverProcess.once("error", (error) => {
+      clearTimeout(timer);
+      rejectSpinUp(error);
+    });
+    serverProcess.once("exit", (code, signal) => {
+      if (!ready) {
+        clearTimeout(timer);
+        rejectSpinUp(new Error(`Next.js server exited before ready (code=${code}, signal=${signal})`));
       }
     });
 
     serverProcess.stderr.on("data", (data) => {
       console.error(`[Server Stderr]: ${data.toString()}`);
     });
-  });
+    });
+  } catch (error) {
+    await stopServerProcess(serverProcess);
+    await cleanupAuditFixtures(testBusiness.id, testQueue.id);
+    await prisma.$disconnect();
+    throw error;
+  }
 
   console.log("Next.js server is online on port 3006!");
 
@@ -166,6 +233,7 @@ async function run() {
 
   // 4. Staff actions worker running in background during load
   let staffWorkerActive = true;
+  let staffActionErrors = 0;
 
   const runStaffActionsWorker = async () => {
     const actor = { id: staffOwner.id, role: UserRole.BUSINESS_OWNER };
@@ -174,52 +242,38 @@ async function run() {
 
     while (staffWorkerActive) {
       try {
-        const entries = await prisma.queueEntry.findMany({
-          where: { queueId: testQueue.id, status: { in: ["WAITING", "CALLED"] } },
-          orderBy: { position: "asc" },
-        });
+        // Use the production transaction and lock path instead of issuing a
+        // SELECT FOR UPDATE in autocommit mode, where its lock ends immediately.
+        await QueueService.withQueueLock(testQueue.id, async (tx) => {
+          const waiting = await tx.queueEntry.findFirst({
+            where: { queueId: testQueue.id, status: QueueEntryStatus.WAITING },
+            orderBy: { position: "asc" },
+          });
 
-        if (entries.length > 0) {
-          // Perform some calls, complete, or cancel
-          const first = entries[0];
-          if (first.status === "WAITING") {
-            // Call next
-            await prisma.$executeRaw`SELECT * FROM "Queue" WHERE id = ${testQueue.id} FOR UPDATE`;
-            const called = await prisma.queueEntry.update({
-              where: { id: first.id },
-              data: { status: "CALLED", calledAt: new Date(), position: 0 },
-            });
-            await prisma.auditLog.create({
-              data: {
-                businessId: testBusiness.id,
-                actorId: actor.id,
-                actorRole: actor.role,
-                action: "QUEUE_ENTRY_CALLED",
-                targetType: "QueueEntry",
-                targetId: called.id,
-              },
-            });
-          } else if (first.status === "CALLED") {
-            // Complete serving
-            await prisma.$executeRaw`SELECT * FROM "Queue" WHERE id = ${testQueue.id} FOR UPDATE`;
-            const completed = await prisma.queueEntry.update({
-              where: { id: first.id },
-              data: { status: "COMPLETED", completedAt: new Date() },
-            });
-            await prisma.auditLog.create({
-              data: {
-                businessId: testBusiness.id,
-                actorId: actor.id,
-                actorRole: actor.role,
-                action: "QUEUE_ENTRY_COMPLETED",
-                targetType: "QueueEntry",
-                targetId: completed.id,
-              },
-            });
+          if (waiting) {
+            await QueueEntryService.transition(
+              waiting.id,
+              QueueEntryStatus.CALLED,
+              actor,
+              tx
+            );
+            await QueueEntryService.transition(
+              waiting.id,
+              QueueEntryStatus.SERVING,
+              actor,
+              tx
+            );
+            await QueueEntryService.transition(
+              waiting.id,
+              QueueEntryStatus.COMPLETED,
+              actor,
+              tx
+            );
           }
-        }
-      } catch {
-        // expect transaction serialisation contention errors which proves lock is active
+        });
+      } catch (error) {
+        staffActionErrors++;
+        console.error("Concurrent staff action failed:", error);
       }
       await new Promise((res) => setTimeout(res, 200));
     }
@@ -227,18 +281,19 @@ async function run() {
 
   const staffWorkerPromise = runStaffActionsWorker();
 
-  // 5. Fire autocannon joins (Concurrency: 30, Duration: 8s)
+  // 5. Fire a fixed number of autocannon joins (30 concurrent connections).
   const url = `http://localhost:3006/api/queues/${testQueue.id}/join`;
-  console.log(`Executing concurrent validation load targeting: ${url}`);
+  console.log(`Executing 300 concurrent-user validation requests targeting: ${url}`);
 
   let autocannonResult: autocannon.Result | null = null;
+  let requestNumber = 0;
   try {
     autocannonResult = await new Promise<autocannon.Result>((resolveTest, rejectTest) => {
       const instance = autocannon(
         {
           url,
           connections: 30,
-          duration: 8,
+          amount: 300,
           requests: [
             {
               method: "POST",
@@ -247,10 +302,10 @@ async function run() {
                 "content-type": "application/json",
               },
               setupRequest: (req: autocannon.Request) => {
-                const randSuffix = Math.floor(1000000 + Math.random() * 9000000);
-                const phone = `+1555${randSuffix}`;
+                const requestId = ++requestNumber;
+                const phone = `+1555${String(requestId).padStart(7, "0")}`;
                 req.body = JSON.stringify({
-                  customerName: `AuditUser_${randSuffix}`,
+                  customerName: `AuditUser_${requestId}`,
                   customerPhone: phone,
                 });
                 return req;
@@ -274,13 +329,14 @@ async function run() {
     await monitorPromise;
     await staffWorkerPromise;
 
+    try {
+      await waitForJoinNotifications(testQueue.id);
+    } catch (notificationError) {
+      console.error("Notification work did not drain before cleanup:", notificationError);
+    }
+
     console.log("Shutting down Next.js server...");
-    serverProcess.kill("SIGKILL");
-    await new Promise<void>((resolveExit) => {
-      serverProcess.on("exit", () => {
-        resolveExit();
-      });
-    });
+    await stopServerProcess(serverProcess);
     console.log("Next.js server terminated.");
   }
 
@@ -293,6 +349,18 @@ async function run() {
     console.log(`Non-2xx responses: ${autocannonResult.non2xx}`);
     console.log(`Average Latency: ${autocannonResult.latency.average} ms`);
   }
+
+  const loadPassed =
+    autocannonResult !== null &&
+    autocannonResult.requests.sent === 300 &&
+    autocannonResult.requests.total === 300 &&
+    autocannonResult["2xx"] === 300 &&
+    autocannonResult.non2xx === 0 &&
+    autocannonResult.errors === 0 &&
+    autocannonResult.timeouts === 0 &&
+    staffActionErrors === 0 &&
+    lockRecords.some((record) => record.blocked_pid !== undefined);
+  console.log(`Load and lock invariants: ${loadPassed ? "PASS" : "FAIL"}`);
 
   console.log("\n=== Captured Database Locks & Contention ===");
   const blockedCount = lockRecords.filter((r) => r.blocked_pid).length;
@@ -308,7 +376,9 @@ async function run() {
   }
 
   // Save results to file
-  const auditResultsFile = resolve(__dirname, "../docs/completed/concurrency_audit_results.json");
+  const auditResultsFile = process.env.CONCURRENCY_AUDIT_OUTPUT
+    ? resolve(process.env.CONCURRENCY_AUDIT_OUTPUT)
+    : resolve(__dirname, "../docs/completed/concurrency_audit_results.json");
   fs.writeFileSync(
     auditResultsFile,
     JSON.stringify({ autocannon: autocannonResult, lockRecords }, null, 2)
@@ -338,6 +408,10 @@ async function run() {
   await prisma.business.deleteMany({ where: { id: testBusiness.id } });
   console.log("Cleanup complete!");
   await prisma.$disconnect();
+
+  if (!loadPassed) {
+    throw new Error("Concurrency audit failed one or more load, response, staff-action, or lock invariants");
+  }
 }
 
 run().catch((err) => {

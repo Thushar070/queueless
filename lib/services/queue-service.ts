@@ -12,6 +12,15 @@ import { QueueEntryService } from "./queue-entry-service";
 import { NotificationService } from "./notification-service";
 
 export class QueueService {
+  private static async lockQueueRow(
+    tx: Prisma.TransactionClient,
+    queueId: string
+  ): Promise<void> {
+    await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "Queue" WHERE id = ${queueId} FOR UPDATE
+    `;
+  }
+
   /**
    * Helper to slugify a string.
    */
@@ -101,27 +110,31 @@ export class QueueService {
   static async updateQueue(businessId: string, queueId: string, input: UpdateQueueInput) {
     const validated = updateQueueSchema.parse(input);
 
-    // Verify ownership
-    const existing = await prisma.queue.findFirst({
-      where: { id: queueId, businessId },
-    });
-    if (!existing) {
-      throw new Error("Queue not found or unauthorized");
-    }
+    return await prisma.$transaction(async (tx) => {
+      await this.lockQueueRow(tx, queueId);
 
-    return await prisma.queue.update({
-      where: { id: queueId },
-      data: {
-        name: validated.name,
-        avgServiceTimeMin: validated.avgServiceTimeMin,
-        maxCapacity: validated.maxCapacity !== undefined ? validated.maxCapacity : undefined,
-        workingHoursStart:
-          validated.workingHoursStart !== undefined ? validated.workingHoursStart || null : undefined,
-        workingHoursEnd:
-          validated.workingHoursEnd !== undefined ? validated.workingHoursEnd || null : undefined,
-        sectionId:
-          validated.sectionId !== undefined ? validated.sectionId || null : undefined,
-      },
+      const existing = await tx.queue.findFirst({
+        where: { id: queueId, businessId },
+        select: { id: true },
+      });
+      if (!existing) {
+        throw new Error("Queue not found or unauthorized");
+      }
+
+      return await tx.queue.update({
+        where: { id: queueId },
+        data: {
+          name: validated.name,
+          avgServiceTimeMin: validated.avgServiceTimeMin,
+          maxCapacity: validated.maxCapacity !== undefined ? validated.maxCapacity : undefined,
+          workingHoursStart:
+            validated.workingHoursStart !== undefined ? validated.workingHoursStart || null : undefined,
+          workingHoursEnd:
+            validated.workingHoursEnd !== undefined ? validated.workingHoursEnd || null : undefined,
+          sectionId:
+            validated.sectionId !== undefined ? validated.sectionId || null : undefined,
+        },
+      });
     });
   }
 
@@ -133,17 +146,17 @@ export class QueueService {
     queueId: string,
     actor: { id: string | null; role: UserRole | null } = { id: null, role: null }
   ) {
-    // Verify ownership
-    const existing = await prisma.queue.findFirst({
-      where: { id: queueId, businessId },
-    });
-    if (!existing) {
-      throw new Error("Queue not found or unauthorized");
-    }
-
-    const newStatus = existing.status === "OPEN" ? "CLOSED" : "OPEN";
-
     const updatedQueue = await prisma.$transaction(async (tx) => {
+      await this.lockQueueRow(tx, queueId);
+
+      const existing = await tx.queue.findFirst({
+        where: { id: queueId, businessId },
+      });
+      if (!existing) {
+        throw new Error("Queue not found or unauthorized");
+      }
+
+      const newStatus = existing.status === "OPEN" ? "CLOSED" : "OPEN";
       const updated = await tx.queue.update({
         where: { id: queueId },
         data: { status: newStatus },
@@ -163,14 +176,14 @@ export class QueueService {
         },
       });
 
-      return updated;
+      return { updated, newStatus };
     });
 
-    if (newStatus === "CLOSED") {
+    if (updatedQueue.newStatus === "CLOSED") {
       await this.massCancelWaitingEntries(queueId, actor);
     }
 
-    return updatedQueue;
+    return updatedQueue.updated;
   }
 
   /**
@@ -300,12 +313,10 @@ export class QueueService {
     const result = await prisma.$transaction(
       async (tx) => {
         // 1. Lock the parent Queue row to serialize operations on empty queues
-        await tx.$executeRaw`
-          SELECT id FROM "Queue" WHERE id = ${queueId} FOR UPDATE
-        `;
+        await this.lockQueueRow(tx, queueId);
 
         // 2. Lock WAITING entries
-        await tx.$executeRaw`
+        await tx.$queryRaw<Array<{ id: string }>>`
           SELECT id FROM "QueueEntry" WHERE "queueId" = ${queueId} AND status = 'WAITING' FOR UPDATE
         `;
 
@@ -369,65 +380,46 @@ export class QueueService {
     queueId: string,
     input: { customerName: string; customerPhone: string; customerEmail?: string | null }
   ) {
-    // A. Pre-check capacity and working-hours schedule before taking the lock
-    const queueConfig = await prisma.queue.findFirst({
-      where: {
-        id: queueId,
-        deletedAt: null,
-        business: {
-          deletedAt: null,
-        },
-      },
-      include: { business: true },
-    });
-
-    if (!queueConfig) {
-      throw new Error("Queue not found");
-    }
-
-    if (queueConfig.business.status === "SUSPENDED") {
-      throw new Error("Business is suspended");
-    }
-
-    if (queueConfig.status !== "OPEN") {
-      throw new Error("Queue is closed");
-    }
-
-    // 1. Pre-check Capacity Limits
-    if (queueConfig.maxCapacity !== null) {
-      const activeCount = await prisma.queueEntry.count({
-        where: { queueId, status: QueueEntryStatus.WAITING },
-      });
-      if (activeCount >= queueConfig.maxCapacity) {
-        throw new Error("closed (at capacity)");
-      }
-    }
-
-    // 2. Pre-check Working Hours schedule (Queue-level takes precedence, fall back to Business-level)
-    const whStart = queueConfig.workingHoursStart ?? queueConfig.business.workingHoursStart;
-    const whEnd = queueConfig.workingHoursEnd ?? queueConfig.business.workingHoursEnd;
-
-    if (whStart && whEnd) {
-      const now = this.getCurrentTime();
-      const hours = String(now.getHours()).padStart(2, "0");
-      const minutes = String(now.getMinutes()).padStart(2, "0");
-      const currentTime = `${hours}:${minutes}`;
-
-      if (currentTime < whStart || currentTime > whEnd) {
-        throw new Error("closed (outside hours)");
-      }
-    }
-
     const entry = await this.withQueueLock(queueId, async (tx) => {
-      // 1. Verify Queue exists and is open
+      // The queue row is already locked by withQueueLock. Lock its business row too,
+      // then read the current settings so suspension and schedule updates serialize
+      // against this join across all app processes.
+      const queueReference = await tx.queue.findFirst({
+        where: { id: queueId, deletedAt: null },
+        select: { businessId: true },
+      });
+      if (!queueReference) {
+        throw new Error("Queue not found");
+      }
+
+      await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM "Business" WHERE id = ${queueReference.businessId} FOR SHARE
+      `;
+
       const queue = await tx.queue.findFirst({
         where: { id: queueId, deletedAt: null },
+        include: { business: true },
       });
-      if (!queue) {
+      if (!queue || queue.business.deletedAt !== null) {
         throw new Error("Queue not found");
+      }
+      if (queue.business.status === "SUSPENDED") {
+        throw new Error("Business is suspended");
       }
       if (queue.status !== "OPEN") {
         throw new Error("Queue is closed");
+      }
+
+      const whStart = queue.workingHoursStart ?? queue.business.workingHoursStart;
+      const whEnd = queue.workingHoursEnd ?? queue.business.workingHoursEnd;
+      if (whStart && whEnd) {
+        const now = this.getCurrentTime();
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const currentTime = `${hours}:${minutes}`;
+        if (currentTime < whStart || currentTime > whEnd) {
+          throw new Error("closed (outside hours)");
+        }
       }
 
       // 2. Check for active duplicate joins (same phone OR same email)
@@ -451,20 +443,16 @@ export class QueueService {
       }
 
       // 3. Check for capacity limits under transaction
-      if (queue.maxCapacity !== null) {
-        const currentCount = await tx.queueEntry.count({
-          where: { queueId, status: QueueEntryStatus.WAITING },
-        });
-        if (currentCount >= queue.maxCapacity) {
-          throw new Error("closed (at capacity)");
-        }
+      // 3. Capacity is checked and position assigned under the same queue lock.
+      const currentCount = await tx.queueEntry.count({
+        where: { queueId, status: QueueEntryStatus.WAITING },
+      });
+      if (queue.maxCapacity !== null && currentCount >= queue.maxCapacity) {
+        throw new Error("closed (at capacity)");
       }
 
       // 4. Generate token and find next position
       const trackingToken = crypto.randomUUID();
-      const currentCountForPosition = await tx.queueEntry.count({
-        where: { queueId, status: QueueEntryStatus.WAITING },
-      });
 
       // 5. Insert new queue entry (position is naturally last, will be re-verified by recalculate)
       return await tx.queueEntry.create({
@@ -474,7 +462,7 @@ export class QueueService {
           customerName: input.customerName,
           customerPhone: input.customerPhone,
           customerEmail: input.customerEmail || null,
-          position: currentCountForPosition + 1,
+          position: currentCount + 1,
           status: QueueEntryStatus.WAITING,
           trackingToken,
         },

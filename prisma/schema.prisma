@@ -102,6 +102,7 @@ model Queue {
 
   @@unique([businessId, slug])
   @@index([businessId])
+  @@index([sectionId])
 }
 
 model QueueEntry {

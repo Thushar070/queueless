@@ -6,9 +6,9 @@ async function main() {
   const sqlPath = join(__dirname, "..", "policies.sql");
   const sql = readFileSync(sqlPath, "utf-8");
 
-  console.log("Applying RLS policies to database...");
+  console.log("Applying tenant-scoped Row Level Security policies...");
   await prisma.$executeRawUnsafe(sql);
-  console.log("RLS policies applied successfully!");
+  console.log("Tenant-scoped Row Level Security policies applied successfully!");
 }
 
 main()

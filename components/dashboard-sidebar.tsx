@@ -14,8 +14,6 @@ import {
   LogOut,
   Menu,
   X,
-  HelpCircle,
-  MessageCircle,
   FolderKanban
 } from "lucide-react";
 
@@ -134,15 +132,6 @@ export default function DashboardSidebar({
               <span className="text-xs font-bold text-foreground truncate block max-w-[200px]">
                 {userEmail}
               </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-              <Link href="#" className="flex items-center gap-1.5 hover:text-foreground">
-                <HelpCircle className="size-3.5" /> Support
-              </Link>
-              <Link href="#" className="flex items-center gap-1.5 hover:text-foreground">
-                <MessageCircle className="size-3.5" /> Help
-              </Link>
             </div>
 
             <button

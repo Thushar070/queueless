@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { QueueEntryStatus } from "@prisma/client";
 import ThemeToggle from "./theme-toggle";
 
@@ -23,19 +22,14 @@ interface SerializedEntry {
 
 interface TrackDashboardProps {
   initialEntry: SerializedEntry;
-  supabaseUrl: string;
-  supabaseAnonKey: string;
 }
 
 export default function TrackDashboard({
   initialEntry,
-  supabaseUrl,
-  supabaseAnonKey,
 }: TrackDashboardProps) {
   const [entry, setEntry] = useState<SerializedEntry>(initialEntry);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(!!(supabaseUrl && supabaseAnonKey));
 
   // Authoritative server refetch of position/status
   const refetchEntry = useCallback(async () => {
@@ -49,57 +43,7 @@ export default function TrackDashboard({
     }
   }, [entry.trackingToken]);
 
-  // 1. Supabase Realtime WebSocket Subscription
-  useEffect(() => {
-    if (!supabaseUrl || !supabaseAnonKey) return;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    let connected = false;
-
-    // Timeout of 3s to declare socket connection failure/fallback
-    const timeout = setTimeout(() => {
-      if (!connected) {
-        setIsConnected(false);
-      }
-    }, 3000);
-
-    const channel = supabase
-      .channel(`queue-entry-${entry.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "QueueEntry",
-          filter: `id=eq.${entry.id}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            const newRecord = payload.new as { position?: number | null; status?: QueueEntryStatus };
-            setEntry((prev) => ({
-              ...prev,
-              position: typeof newRecord.position === "number" ? newRecord.position : prev.position,
-              status: newRecord.status || prev.status,
-            }));
-          }
-        }
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          connected = true;
-          setIsConnected(true);
-          clearTimeout(timeout);
-        } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-          setIsConnected(false);
-        }
-      });
-
-    return () => {
-      clearTimeout(timeout);
-      supabase.removeChannel(channel);
-    };
-  }, [entry.id, supabaseUrl, supabaseAnonKey]);
-
-  // 2. Heartbeat polling (every 5s) to guarantee live position updates even if WebSocket drops or misses events
+  // Poll the authoritative API so updates use the same access checks as the rest of the app.
   useEffect(() => {
     // Poll every 5s if active or waiting
     if (entry.status === "COMPLETED" || entry.status === "CANCELLED" || entry.status === "SKIPPED") {
@@ -113,7 +57,7 @@ export default function TrackDashboard({
     return () => clearInterval(interval);
   }, [entry.status, refetchEntry]);
 
-  // 3. One-time authoritative refetch on browser reconnect or tab visibility regain
+  // Refresh when the browser reconnects or the customer returns to the tab.
   useEffect(() => {
     const handleRefetch = () => {
       if (document.visibilityState === "visible") {
@@ -171,11 +115,9 @@ export default function TrackDashboard({
 
       <div className="w-full max-w-md md:max-w-lg bg-card border border-border rounded-2xl p-8 shadow-sm text-center space-y-6 z-10 relative">
         <div>
-          <span className={`text-[10px] font-heading font-bold uppercase tracking-wider px-3 py-1 rounded-full border inline-flex items-center gap-1.5 transition-colors ${
-            isConnected ? "text-emerald-700 border-emerald-500/20 bg-emerald-50" : "text-muted-foreground border-border bg-muted"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
-            {isConnected ? "Live Socket" : "Polling fallback"}
+          <span className="text-[10px] font-heading font-bold uppercase tracking-wider px-3 py-1 rounded-full border inline-flex items-center gap-1.5 text-muted-foreground border-border bg-muted">
+            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+            Auto-refresh · every 5 seconds
           </span>
           <h1 className="text-3xl font-heading font-extrabold text-foreground mt-4 tracking-tight">
             {entry.queue.business.name}

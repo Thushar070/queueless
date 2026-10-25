@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { QueueEntryStatus } from "@prisma/client";
+import Image from "next/image";
 import {
   QrCode,
   Volume2,
@@ -29,8 +29,6 @@ interface StaffQueueDashboardProps {
   queueId: string;
   queueName: string;
   initialEntries: SerializedEntry[];
-  supabaseUrl: string;
-  supabaseAnonKey: string;
   qrCodeUrl?: string | null;
 }
 
@@ -38,8 +36,6 @@ export default function StaffQueueDashboard({
   queueId,
   queueName,
   initialEntries,
-  supabaseUrl,
-  supabaseAnonKey,
   qrCodeUrl
 }: StaffQueueDashboardProps) {
   const [entries, setEntries] = useState<SerializedEntry[]>(initialEntries);
@@ -118,33 +114,7 @@ export default function StaffQueueDashboard({
     }
   };
 
-  // Supabase Realtime Subscription
-  useEffect(() => {
-    if (!supabaseUrl || !supabaseAnonKey) return;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    const channel = supabase
-      .channel(`queue-entries-${queueId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "QueueEntry",
-          filter: `queueId=eq.${queueId}`,
-        },
-        () => {
-          fetchEntries();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queueId, supabaseUrl, supabaseAnonKey, fetchEntries]);
-
-  // Polling Fallback (every 10 seconds)
+  // Poll the authorized app API for queue changes.
   useEffect(() => {
     const interval = setInterval(() => {
       fetchEntries();
@@ -532,12 +502,6 @@ export default function StaffQueueDashboard({
                 : "Resume Admissions"}
             </button>
 
-            <button
-              onClick={() => alert("Broadcast update message triggers Twilio alerts overlay.")}
-              className="w-full bg-card hover:bg-muted border border-border text-foreground font-bold py-2.5 rounded-lg transition-all text-xs tracking-wider uppercase cursor-pointer shadow-sm"
-            >
-              Broadcast Update
-            </button>
           </div>
         </div>
 
@@ -550,7 +514,14 @@ export default function StaffQueueDashboard({
             <h3 className="text-lg font-heading font-extrabold text-foreground">Queue Registration QR</h3>
             <div className="flex justify-center border border-border p-4 bg-white rounded-xl">
               {qrCodeUrl ? (
-                <img src={qrCodeUrl} alt="Queue QR Code" className="size-48" />
+                <Image
+                  src={qrCodeUrl}
+                  alt="Queue QR Code"
+                  width={192}
+                  height={192}
+                  unoptimized
+                  className="size-48"
+                />
               ) : (
                 <div className="size-48 flex items-center justify-center text-muted-foreground text-xs">
                   No QR Code generated

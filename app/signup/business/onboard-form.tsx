@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface OnboardBusinessFormProps {
   email: string;
@@ -9,6 +10,7 @@ interface OnboardBusinessFormProps {
 
 export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps) {
   const { update } = useSession();
+  const router = useRouter();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,7 +67,7 @@ export default function OnboardBusinessForm({ email }: OnboardBusinessFormProps)
       }
 
       await update();
-      window.location.assign("/dashboard");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
